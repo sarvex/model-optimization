@@ -71,7 +71,7 @@ def quantize_scope(*args):
       'QuantizeLayer': quantize_layer.QuantizeLayer,
       'OutputOnlyConfig': quantize_config_mod.OutputOnlyConfig,
   }
-  quantization_objects.update(default_8bit_quantize_registry._types_dict())  # pylint: disable=protected-access
+  quantization_objects |= default_8bit_quantize_registry._types_dict()
   quantization_objects.update(default_n_bit_quantize_registry._types_dict())  # pylint: disable=protected-access
   quantization_objects.update(quantizers._types_dict())  # pylint: disable=protected-access
 

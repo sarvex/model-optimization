@@ -57,8 +57,7 @@ class AbstractCentroidsInitialisation:
     # Regular clustering calculates the centroids using all the weights
     centroids = self._calculate_centroids_for_interval(self.weights,
                                                        self.number_of_clusters)
-    cluster_centroids = tf.reshape(centroids, (self.number_of_clusters,))
-    return cluster_centroids
+    return tf.reshape(centroids, (self.number_of_clusters,))
 
   def _zero_centroid_initialization(self):
     """The zero-centroid sparsity preservation technique works as follows.
@@ -116,12 +115,10 @@ class AbstractCentroidsInitialisation:
     positive_cluster_centroids = self._calculate_centroids_for_interval(
         positive_weights, number_of_positive_clusters)
 
-    # Put all the centroids together: negative, zero, positive
-    centroids = tf.concat(
+    return tf.concat(
         [negative_cluster_centroids, zero_centroid, positive_cluster_centroids],
-        axis=0)
-
-    return centroids
+        axis=0,
+    )
 
   def get_cluster_centroids(self):
     # Check whether sparsity preservation should be enforced
@@ -144,10 +141,7 @@ class LinearCentroidsInitialisation(AbstractCentroidsInitialisation):
 
     weight_min = tf.reduce_min(weight_interval)
     weight_max = tf.reduce_max(weight_interval)
-    cluster_centroids = tf.linspace(weight_min, weight_max,
-                                    number_of_clusters_for_interval)
-
-    return cluster_centroids
+    return tf.linspace(weight_min, weight_max, number_of_clusters_for_interval)
 
 
 class KmeansPlusPlusCentroidsInitialisation(AbstractCentroidsInitialisation):
@@ -176,12 +170,12 @@ class RandomCentroidsInitialisation(AbstractCentroidsInitialisation):
                                         number_of_clusters_for_interval):
     weight_min = tf.reduce_min(weight_interval)
     weight_max = tf.reduce_max(weight_interval)
-    cluster_centroids = tf.random.uniform(
-        shape=(number_of_clusters_for_interval,),
+    return tf.random.uniform(
+        shape=(number_of_clusters_for_interval, ),
         minval=weight_min,
         maxval=weight_max,
-        dtype=weight_interval.dtype)
-    return cluster_centroids
+        dtype=weight_interval.dtype,
+    )
 
 
 class TFLinearEquationSolver:
@@ -327,10 +321,7 @@ class DensityBasedCentroidsInitialisation(AbstractCentroidsInitialisation):
         sorted_sequence=cdf_values, values=probability_space, side='right')
 
     centroids = self._get_centroids(cdf_x_grid, cdf_values, matching_indices)
-    cluster_centroids = tf.reshape(centroids,
-                                   (number_of_clusters_for_interval,))
-
-    return cluster_centroids
+    return tf.reshape(centroids, (number_of_clusters_for_interval, ))
 
 
 class CentroidsInitializerFactory:

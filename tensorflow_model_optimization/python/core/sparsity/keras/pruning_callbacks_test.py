@@ -51,9 +51,8 @@ class PruneCallbacksTest(tf.test.TestCase, parameterized.TestCase):
 
     if custom_training_loop:
       return pruned_model, loss, optimizer, x_train, y_train
-    else:
-      pruned_model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
-      return pruned_model, x_train, y_train
+    pruned_model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
+    return pruned_model, x_train, y_train
 
   @keras_parameterized.run_all_keras_modes
   def testUpdatePruningStepsAndLogsSummaries(self):

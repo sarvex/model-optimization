@@ -152,11 +152,8 @@ class ClusterTest(test.TestCase, parameterized.TestCase):
     self.assertEqual(original_layer, wrapped_layer.layer)
 
   def _count_clustered_layers(self, model):
-    count = 0
-    for layer in model.layers:
-      if isinstance(layer, cluster_wrapper.ClusterWeights):
-        count += 1
-    return count
+    return sum(1 for layer in model.layers
+               if isinstance(layer, cluster_wrapper.ClusterWeights))
 
   @keras_parameterized.run_all_keras_modes
   def testClusterKerasClusterableLayer(self):

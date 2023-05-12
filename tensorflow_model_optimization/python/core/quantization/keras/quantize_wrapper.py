@@ -75,7 +75,7 @@ class QuantizeWrapper(tf.keras.layers.Wrapper):
         layer.__class__.__name__)
 
   def _make_layer_name(self, layer):
-    return '{}_{}'.format('quant', layer.name)
+    return f'quant_{layer.name}'
 
   def _weight_name(self, name):
     """Extracts the weight name from the full TensorFlow variable name.
@@ -172,7 +172,7 @@ class QuantizeWrapper(tf.keras.layers.Wrapper):
 
     # Assuming outputs is a single tensor. There might be some rare layers
     # where this is not true. Handle them when enabling such a layer.
-    if isinstance(outputs, list) or isinstance(outputs, tuple):
+    if isinstance(outputs, (list, tuple)):
       raise RuntimeError('Multiple output tensors not handled currently.')
 
     output_quantizer = self._output_quantizers[0]

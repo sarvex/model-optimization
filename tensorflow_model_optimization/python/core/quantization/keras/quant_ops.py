@@ -162,7 +162,6 @@ def LastValueQuantize(inputs,
       elif input_dim == 4:
         reduce_dims = [0, 1, 2]
 
-    if per_channel:
       if input_dim >= 2:
         batch_min = tf.math.reduce_min(
             inputs, axis=reduce_dims, name='BatchMin')
@@ -259,7 +258,6 @@ def MovingAvgQuantize(inputs,
       elif input_dim == 4:
         reduce_dims = [0, 1, 2]
 
-    if per_channel:
       if input_dim >= 2:
         batch_min = tf.math.reduce_min(
             inputs, axis=reduce_dims, name='BatchMin')

@@ -132,13 +132,15 @@ class _QuantizeHelper(object):
   def _add_range_weights(self, layer, name):
     """Add min and max vars to layer."""
     min_weight = layer.add_weight(
-        name + '_min',
+        f'{name}_min',
         initializer=keras.initializers.Constant(-6.0),
-        trainable=False)
+        trainable=False,
+    )
     max_weight = layer.add_weight(
-        name + '_max',
+        f'{name}_max',
         initializer=keras.initializers.Constant(6.0),
-        trainable=False)
+        trainable=False,
+    )
 
     return {'min_var': min_weight, 'max_var': max_weight}
 
@@ -313,13 +315,15 @@ class AllValuesQuantizer(_QuantizeHelper, Quantizer):
 
   def build(self, tensor_shape, name, layer):
     min_weight = layer.add_weight(
-        name + '_min',
+        f'{name}_min',
         initializer=keras.initializers.Constant(0.0),
-        trainable=False)
+        trainable=False,
+    )
     max_weight = layer.add_weight(
-        name + '_max',
+        f'{name}_max',
         initializer=keras.initializers.Constant(0.0),
-        trainable=False)
+        trainable=False,
+    )
     return {'min_var': min_weight, 'max_var': max_weight}
 
   def __call__(self, inputs, training, weights, **kwargs):

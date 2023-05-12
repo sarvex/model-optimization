@@ -63,10 +63,7 @@ class LayerPattern(object):
     self.inputs = inputs
 
   def __str__(self):
-    return '{} : {} <- [{}]'.format(
-        self.class_name,
-        self.config,
-        ', '.join([str(inp) for inp in self.inputs]))
+    return f"{self.class_name} : {self.config} <- [{', '.join([str(inp) for inp in self.inputs])}]"
 
 
 class LayerNode(object):
@@ -112,9 +109,7 @@ class LayerNode(object):
     self.names_and_weights = names_and_weights
 
   def __str__(self):
-    return '{} <- [{}]'.format(
-        self.layer,
-        ', '.join([str(input_layer) for input_layer in self.input_layers]))
+    return f"{self.layer} <- [{', '.join([str(input_layer) for input_layer in self.input_layers])}]"
 
   def _eq(self, ordered_dict1, ordered_dict2):
     """Built-in equality test for OrderedDict fails when value is NP array."""
@@ -122,30 +117,25 @@ class LayerNode(object):
     if len(ordered_dict1) != len(ordered_dict2):
       return False
 
-    for item1, item2 in zip(ordered_dict1.items(), ordered_dict2.items()):
-      if item1[0] != item2[0] or not (item1[1] == item2[1]).all():
-        return False
-
-    return True
+    return not any(
+        item1[0] != item2[0] or not (item1[1] == item2[1]).all()
+        for item1, item2 in zip(ordered_dict1.items(), ordered_dict2.items()))
 
   def __eq__(self, other):
     if not other or not isinstance(other, LayerNode):
       return False
 
     if self.layer != other.layer \
-        or not self._eq(self.weights, other.weights) \
-        or self.metadata != other.metadata:
+          or not self._eq(self.weights, other.weights) \
+          or self.metadata != other.metadata:
       return False
 
     if len(self.input_layers) != len(other.input_layers):
       return False
 
-    for first_input_layer, second_input_layer in zip(
-        self.input_layers, other.input_layers):
-      if first_input_layer != second_input_layer:
-        return False
-
-    return True
+    return all(first_input_layer == second_input_layer
+               for first_input_layer, second_input_layer in zip(
+                   self.input_layers, other.input_layers))
 
   def __ne__(self, other):
     """Ensure this works on Python2."""

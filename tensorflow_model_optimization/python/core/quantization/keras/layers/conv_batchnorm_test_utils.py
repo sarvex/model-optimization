@@ -32,11 +32,8 @@ def _get_conv2d_params():
 
 
 def _get_initializer(random_init):
-  if random_init:
-    kernel_initializer = keras.initializers.glorot_uniform()
-  else:
-    kernel_initializer = keras.initializers.glorot_uniform(seed=0)
-  return kernel_initializer
+  return (keras.initializers.glorot_uniform()
+          if random_init else keras.initializers.glorot_uniform(seed=0))
 
 
 class Conv2DModel(object):

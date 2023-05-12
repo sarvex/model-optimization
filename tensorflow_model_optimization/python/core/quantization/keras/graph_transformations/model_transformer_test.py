@@ -61,11 +61,11 @@ class ModelTransformerTest(tf.test.TestCase, parameterized.TestCase):
 
   def _create_model_inputs(self, model):
     if isinstance(model.input, dict):
-      inputs = {}
-      for key, input_layer in model.input.items():
-        inputs[key] = np.random.randn(
-            *self._batch(input_layer.get_shape().as_list(), 1))
-      return inputs
+      return {
+          key:
+          np.random.randn(*self._batch(input_layer.get_shape().as_list(), 1))
+          for key, input_layer in model.input.items()
+      }
     else:
       return np.random.randn(*self._batch(model.input.get_shape().as_list(), 1))
 
@@ -291,12 +291,14 @@ class ModelTransformerTest(tf.test.TestCase, parameterized.TestCase):
 
   def testReplaceSingleLayerWithSingleLayer_CustomLayerWithNontensorInput(self):
 
+
+
+
     class CustomDense(keras.layers.Dense):
 
       def call(self, inputs, identity=False):
-        if identity:
-          return inputs
-        return super().call(inputs)
+        return inputs if identity else super().call(inputs)
+
 
     class QuantizedCustomDense(CustomDense):
       pass
@@ -347,6 +349,9 @@ class ModelTransformerTest(tf.test.TestCase, parameterized.TestCase):
   @parameterized.parameters(['sequential', 'functional'])
   def testReplaceSingleLayer_WithMultipleLayers(self, model_type):
 
+
+
+
     class ReplaceDenseWithDenseAndActivation(transforms.Transform):
       """Dense => (Dense -> ReLU)."""
 
@@ -358,10 +363,8 @@ class ModelTransformerTest(tf.test.TestCase, parameterized.TestCase):
         layer_config = keras.layers.serialize(activation_layer)
         layer_config['name'] = activation_layer.name
 
-        activation_layer_node = LayerNode(
-            layer_config, input_layers=[match_layer])
+        return LayerNode(layer_config, input_layers=[match_layer])
 
-        return activation_layer_node
 
     if model_type == 'functional':
       inp = keras.layers.Input((3,))
@@ -389,6 +392,9 @@ class ModelTransformerTest(tf.test.TestCase, parameterized.TestCase):
 
   def testReplaceSingleLayer_WithMultipleLayers_InputLayer(self):
 
+
+
+
     class ReplaceInputWithInputAndActivation(transforms.Transform):
       """InputLayer => (InputLayer -> Activation)."""
 
@@ -400,10 +406,8 @@ class ModelTransformerTest(tf.test.TestCase, parameterized.TestCase):
         layer_config = keras.layers.serialize(activation_layer)
         layer_config['name'] = activation_layer.name
 
-        activation_layer_node = LayerNode(
-            layer_config, input_layers=[match_layer])
+        return LayerNode(layer_config, input_layers=[match_layer])
 
-        return activation_layer_node
 
     inp1 = keras.layers.Input((3,))
     inp2 = keras.layers.Input((3,))
@@ -585,10 +589,12 @@ class ModelTransformerTest(tf.test.TestCase, parameterized.TestCase):
 
     model = self._simple_dense_model(model_type)
     transformed_model, _ = ModelTransformer(
-        model, [ReplaceReLUWithSoftmax(),
-                ReplaceSoftmaxWithELU()],
-        candidate_layers=set([layer.name for layer in model.layers
-                             ])).transform()
+        model,
+        [ReplaceReLUWithSoftmax(),
+         ReplaceSoftmaxWithELU()],
+        candidate_layers={layer.name
+                          for layer in model.layers},
+    ).transform()
 
     self.assertEqual(transformed_model.layers[-1].__class__.__name__, 'ELU')
 

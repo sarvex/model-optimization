@@ -136,12 +136,7 @@ class ClusterWeightsTest(test.TestCase, parameterized.TestCase):
     self.assertTrue(hasattr(l, '_batch_input_shape'))
 
   # Makes it easier to test all possible parameters combinations.
-  @parameterized.parameters(
-      *itertools.product(
-          range(2, 16, 4),
-          [type_centroid for type_centroid in CentroidInitialization]
-      )
-  )
+  @parameterized.parameters(*itertools.product(range(2, 16, 4), list(CentroidInitialization)))
   def testValuesAreClusteredAfterStripping(self,
                                            number_of_clusters,
                                            cluster_centroids_init):

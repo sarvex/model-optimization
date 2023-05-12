@@ -38,8 +38,7 @@ def _build_model():
   x = tf.keras.layers.Dense(500, activation='relu', name='fc1')(x)
   output = tf.keras.layers.Dense(10, name='fc2')(x)
 
-  model = tf.keras.Model(inputs=[i], outputs=[output])
-  return model
+  return tf.keras.Model(inputs=[i], outputs=[output])
 
 
 def _get_dataset():

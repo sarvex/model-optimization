@@ -99,21 +99,18 @@ class ModelTransformer(object):
 
   def _get_consuming_layers(self, check_layer):
     """Returns all the layers which are out nodes from the layer."""
-    consuming_layers = []
     check_layer_name = check_layer['config']['name']
-    for layer in self._config['layers']:
-      if check_layer_name in self._get_inbound_layer_names(layer):
-        consuming_layers.append(layer)
-
-    return consuming_layers
+    return [
+        layer for layer in self._config['layers']
+        if check_layer_name in self._get_inbound_layer_names(layer)
+    ]
 
   def _get_output_consumers(self, check_layer):
     """Returns if any tensors from the layer are outputs of the model."""
-    output_consumers = []
-    for output_layer in self._config['output_layers']:
-      if output_layer[0] == check_layer['config']['name']:
-        output_consumers.append(output_layer)
-    return output_consumers
+    return [
+        output_layer for output_layer in self._config['output_layers']
+        if output_layer[0] == check_layer['config']['name']
+    ]
 
   def _get_layers(self, layer_names):
     return [
@@ -131,27 +128,22 @@ class ModelTransformer(object):
     return self._layer_metadata_map.get(layer_name, {})
 
   def _match_pattern(self, target, pattern):
-    return re.match('^' + pattern + '$', target) is not None
+    return re.match(f'^{pattern}$', target) is not None
 
   def _match_layer(self, layer, pattern):
     """Check if specific layer matches the pattern."""
 
     if self.candidate_layers and \
-        layer['config']['name'] not in self.candidate_layers:
+          layer['config']['name'] not in self.candidate_layers:
       return False
 
     if not self._match_pattern(layer['class_name'], pattern.class_name):
       return False
 
     layer_config = layer['config']
-    for key, value in pattern.config.items():
-      # Either the provided value should equal the config value, or
-      # be a regex match to str(value).
-      if not (self._match_pattern(str(layer_config.get(key)), str(value)) or \
-              layer_config.get(key) == value):
-        return False
-
-    return True
+    return all((self._match_pattern(str(layer_config.get(key)), str(value))
+                or layer_config.get(key) == value)
+               for key, value in pattern.config.items())
 
   def _is_match_supported(self, layer, is_head_node):
     """Check if ModelTransformer supports transformations given number of inputs and outputs at a layer.
@@ -182,33 +174,17 @@ class ModelTransformer(object):
 
     consuming_layers = self._get_consuming_layers(layer)
     output_consumers = self._get_output_consumers(layer)
-    if len(consuming_layers) + len(output_consumers) > 1:
-      # Even if a layer has only 1 incoming connection, multiple layers may
-      # still consume the output. Having multiple consumers is only supported
-      # for the head node, and not intermediate layers. Replacing intermediate
-      # nodes with >1 consumer will lead to dangling nodes.
-      #
-      # Note that theoretically, intermediate layers can supported, as a part
-      # of a general layer transform tool. This is not supported given no
-      # motivating use case.
-      if not is_head_node:
-        return False
-
-    return True
+    return bool(len(consuming_layers) + len(output_consumers) <= 1 or is_head_node)
 
   def _get_input_layer_names(self, layer):
     """Get the names of a layer's input layers."""
     if self._is_functional_model(self.model):
       inbound_nodes = layer['inbound_nodes']
       return [connection_info[0] for connection_info in inbound_nodes[0]]
-    else:  # Sequential model.
+    else:# Sequential model.
       layers = self._config['layers']
       i = layers.index(layer)
-      if i == 0:
-        # First layer has no inputs.
-        return []
-      else:
-        return [layers[i - 1]['config']['name']]
+      return [] if i == 0 else [layers[i - 1]['config']['name']]
 
   def _match_layer_with_inputs(self, layer, pattern, is_head_node):
     """Match pattern at this layer, and continue to match at its inputs."""
@@ -247,12 +223,13 @@ class ModelTransformer(object):
     # TODO(pulkitb): Fix by checking all permutations.
     input_match_layer_nodes = []
     for input_layer, pattern_ in zip(input_layers, pattern.inputs):
-      match_layer_node = self._match_layer_with_inputs(
-          input_layer, pattern_, is_head_node=False)
-      if not match_layer_node:
-        return None
-      input_match_layer_nodes.append(match_layer_node)
+      if match_layer_node := self._match_layer_with_inputs(input_layer,
+                                                           pattern_,
+                                                           is_head_node=False):
+        input_match_layer_nodes.append(match_layer_node)
 
+      else:
+        return None
     return LayerNode(layer, self._get_layer_weights(layer['config']['name']),
                      input_match_layer_nodes,
                      self._get_layer_metadata(layer['config']['name']),
@@ -262,9 +239,9 @@ class ModelTransformer(object):
     for layer in self._config['layers']:
       if matched_layers and layer['config']['name'] in matched_layers:
         continue
-      match_layer = self._match_layer_with_inputs(
-          layer, pattern, is_head_node=True)
-      if match_layer:
+      if match_layer := self._match_layer_with_inputs(layer,
+                                                      pattern,
+                                                      is_head_node=True):
         return match_layer
 
     return None
@@ -324,13 +301,13 @@ class ModelTransformer(object):
     replacement_name = replacement_layer_node.layer['config']['name']
 
     def _replace_layer_name_for_connection_info(connection_info, match_name,
-                                                replacement_name):
+                                                  replacement_name):
       if connection_info[0] == match_name:
         connection_info[0] = replacement_name
       for key in connection_info[3]:
-        if isinstance(connection_info[3][key], list):
-          if connection_info[3][key][0] == match_name:
-            connection_info[3][key][0] = replacement_name
+        if (isinstance(connection_info[3][key], list)
+            and connection_info[3][key][0] == match_name):
+          connection_info[3][key][0] = replacement_name
 
     for consumer in consuming_layers:
       for inbound_node in self._inbound_node_generator(consumer):
@@ -485,15 +462,10 @@ class ModelTransformer(object):
     """Returns a map of weight name, weight matrix. Keeps keras ordering."""
     weights_map = collections.OrderedDict()
     for weight_tensor, weight_numpy in \
-        zip(keras_layer.weights, keras_layer.get_weights()):
+          zip(keras_layer.weights, keras_layer.get_weights()):
       weights_map[self._weight_name(weight_tensor.name)] = weight_numpy
 
-    if len(weights_map) != len(keras_layer.weights):
-      # The case that variable identifier is not unique. It's a fallback that
-      # uses weight list instead of the weights map.
-      return None
-
-    return weights_map
+    return None if len(weights_map) != len(keras_layer.weights) else weights_map
 
   def _get_keras_layer_names_and_weights(self, keras_layer):
     return zip([weight.name for weight in keras_layer.weights],
@@ -613,7 +585,7 @@ class ModelTransformer(object):
 
     custom_objects = {}
     for transform in self.transforms:
-      custom_objects.update(transform.custom_objects())
+      custom_objects |= transform.custom_objects()
 
     # Reconstruct model from the config, using the cloned layers.
     if self._is_functional_model(self.model):
@@ -623,12 +595,9 @@ class ModelTransformer(object):
                                                        custom_objects)
 
     for layer in transformed_model.layers:
-      weights = self._layer_weights_map.get(layer.name)
-      if weights:
+      if weights := self._layer_weights_map.get(layer.name):
         self._set_layer_weights(layer, weights)
-      else:
-        names_and_weights = self._layer_names_and_weights_map.get(layer.name)
-        if names_and_weights:
-          self._set_layer_names_and_weights(layer, names_and_weights)
+      elif names_and_weights := self._layer_names_and_weights_map.get(layer.name):
+        self._set_layer_names_and_weights(layer, names_and_weights)
 
     return transformed_model, copy.deepcopy(self._layer_metadata_map)

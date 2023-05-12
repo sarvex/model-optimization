@@ -134,7 +134,7 @@ def main(unused_argv):
   tflite_model = converter.convert()
 
   tflite_model_path = '/tmp/mnist_2x4.tflite'
-  print('model is saved to {}'.format(tflite_model_path))
+  print(f'model is saved to {tflite_model_path}')
   with open(tflite_model_path, 'wb') as f:
     f.write(tflite_model)
 

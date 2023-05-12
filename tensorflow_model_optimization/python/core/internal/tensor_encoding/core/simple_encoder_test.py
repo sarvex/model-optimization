@@ -181,7 +181,7 @@ class SimpleEncoderTest(tf.test.TestCase, parameterized.TestCase):
     encoded_x = encoder.encode(x, state)
     with self.assertRaises(ValueError):
       bad_encoded_x = dict(encoded_x)
-      bad_encoded_x.update({'x': x})
+      bad_encoded_x['x'] = x
       encoder.decode(bad_encoded_x)
 
   def test_input_tensorspec(self):

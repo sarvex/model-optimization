@@ -41,23 +41,18 @@ IGNORE_LIST = [
 
 def ignore_tensor(details, ignore_list):
   """Returns boolean that indicates whether to ignore the tensor."""
-  name = details["name"].casefold()
-  if not name:
+  if name := details["name"].casefold():
+    return any(to_ignore in name for to_ignore in ignore_list)
+  else:
     return True
-  for to_ignore in ignore_list:
-    if to_ignore in name:
-      return True
-  return False
 
 
 def calculate_sparsity(weights):
   """Returns sparsity of the given weights tensor."""
   number_of_weights = np.size(weights)
   number_of_non_zero_weights = np.count_nonzero(weights)
-  sparsity = 1.0 - float(
-      number_of_non_zero_weights
-  ) / number_of_weights if number_of_non_zero_weights != 0 else 1.0
-  return sparsity
+  return (1.0 - float(number_of_non_zero_weights) / number_of_weights
+          if number_of_non_zero_weights != 0 else 1.0)
 
 
 def run(input_tflite_path, m_by_n_str):

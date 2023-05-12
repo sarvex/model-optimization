@@ -38,8 +38,7 @@ def _build_model():
   x = tf.keras.layers.Dense(500, activation='relu', name='fc1')(x)
   output = tf.keras.layers.Dense(10, name='fc2')(x)
 
-  model = tf.keras.Model(inputs=[i], outputs=[output])
-  return model
+  return tf.keras.Model(inputs=[i], outputs=[output])
 
 
 def _get_dataset():
@@ -47,8 +46,8 @@ def _get_dataset():
   (x_train, y_train), (x_test, y_test) = mnist.load_data()
   x_train, x_test = x_train / 255.0, x_test / 255.0
   # Use subset of 60000 examples to keep unit test speed fast.
-  x_train = x_train[0:1000]
-  y_train = y_train[0:1000]
+  x_train = x_train[:1000]
+  y_train = y_train[:1000]
   return (x_train, y_train), (x_test, y_test)
 
 

@@ -78,25 +78,23 @@ def strip_clustering_cqat(to_strip):
     # so that we can utilize the ranges in tflite converter
 
     # we only handle conv2d and dense layers here
-    if hasattr(layer, 'layer'):
-      # pylint:disable=protected-access
-      if 'depthwise' not in layer.layer.name:
-        if isinstance(layer.layer,
-                      (tf.keras.layers.Conv2D, tf.keras.layers.Dense)):
-          new_variables = []
-          for v in layer._trainable_weights:
-            if 'cluster_centroids_tf' in v.name or (
-                'ori_weights_vars_tf' in v.name):
-              continue
-            new_variables.append(v)
-          layer._trainable_weights = new_variables
+    if (hasattr(layer, 'layer') and 'depthwise' not in layer.layer.name
+        and isinstance(layer.layer,
+                       (tf.keras.layers.Conv2D, tf.keras.layers.Dense))):
+      new_variables = []
+      for v in layer._trainable_weights:
+        if 'cluster_centroids_tf' in v.name or (
+            'ori_weights_vars_tf' in v.name):
+          continue
+        new_variables.append(v)
+      layer._trainable_weights = new_variables
 
-          new_variables = []
-          for v in layer._non_trainable_weights:
-            if 'pulling_indices_tf' in v.name:
-              continue
-            new_variables.append(v)
-          layer._non_trainable_weights = new_variables
+      new_variables = []
+      for v in layer._non_trainable_weights:
+        if 'pulling_indices_tf' in v.name:
+          continue
+        new_variables.append(v)
+      layer._non_trainable_weights = new_variables
 
     return layer
 

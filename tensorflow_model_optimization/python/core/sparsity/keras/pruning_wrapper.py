@@ -141,8 +141,8 @@ class PruneLowMagnitude(Wrapper):
 
     if block_pooling_type not in ['AVG', 'MAX']:
       raise ValueError(
-          'Unsupported pooling type \'{}\'. Should be \'AVG\' or \'MAX\'.'
-          .format(block_pooling_type))
+          f"Unsupported pooling type \'{block_pooling_type}\'. Should be \'AVG\' or \'MAX\'."
+      )
 
     if not isinstance(layer, tf.keras.layers.Layer):
       raise ValueError(
@@ -152,8 +152,8 @@ class PruneLowMagnitude(Wrapper):
     # TODO(pulkitb): This should be pushed up to the wrappers.py
     # Name the layer using the wrapper and underlying layer name.
     # Prune(Dense) becomes prune_dense_1
-    kwargs.update({'name': '{}_{}'.format(
-        generic_utils.to_snake_case(self.__class__.__name__), layer.name)})
+    kwargs[
+        'name'] = f'{generic_utils.to_snake_case(self.__class__.__name__)}_{layer.name}'
 
     if isinstance(layer, prunable_layer.PrunableLayer) or hasattr(
         layer, 'get_prunable_weights'):

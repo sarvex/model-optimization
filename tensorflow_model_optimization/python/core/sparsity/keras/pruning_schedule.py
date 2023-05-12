@@ -96,7 +96,7 @@ class PruningSchedule(object):
 
   def _validate_sparsity(self, sparsity, variable_name):
     if not 0.0 <= sparsity < 1.0:
-      raise ValueError('{} must be in range [0,1)'.format(variable_name))
+      raise ValueError(f'{variable_name} must be in range [0,1)')
 
   @abc.abstractmethod
   def __call__(self, step):
@@ -221,11 +221,7 @@ class PolynomialDecay(PruningSchedule):
 
   def __call__(self, step):
     # TODO(tf-mot): consider switch to divide for 1.XX also.
-    if hasattr(tf, 'div'):
-      divide = tf.div
-    else:
-      divide = tf.math.divide
-
+    divide = tf.div if hasattr(tf, 'div') else tf.math.divide
     # TODO(pulkitb): Replace function with tf.polynomial_decay
     with tf.name_scope('polynomial_decay_pruning_schedule'):
       p = tf.math.minimum(

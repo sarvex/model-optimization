@@ -76,9 +76,7 @@ class PruningWrapperTest(tf.test.TestCase):
     pruning_wrapper.PruneLowMagnitude(layer, block_pooling_type='MAX')
 
   def _check_mask_count(self, expected_mask_count=0):
-    mask_count = 0
-    for l in self.model.layers:
-      mask_count += len(l.pruning_vars)
+    mask_count = sum(len(l.pruning_vars) for l in self.model.layers)
     self.assertEqual(mask_count, expected_mask_count)
 
   # TODO(suyoggupta): Randomize the layer dimensions

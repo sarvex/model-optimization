@@ -51,12 +51,7 @@ class ClusterableWeightsCA(clustering_algorithm.ClusteringAlgorithm):
         tf.reshape(self.cluster_centroids, [1, 1, clst_num]),
         [weight.shape[0], weight.shape[1], 1])
 
-    # We find the nearest cluster centroids and store them so that ops can build
-    # their kernels upon it
-    pulling_indices = tf.argmin(
-        tf.abs(tiled_weights - tiled_cluster_centroids), axis=2)
-
-    return pulling_indices
+    return tf.argmin(tf.abs(tiled_weights - tiled_cluster_centroids), axis=2)
 
 
 class MyClusterableLayer(keras.layers.Layer,
@@ -93,11 +88,7 @@ class MyClusterableLayer(keras.layers.Layer,
 
   def get_clusterable_algorithm(self, weight_name):
     """Returns clustering algorithm for the custom weights 'w'."""
-    if weight_name == 'w':
-      return ClusterableWeightsCA
-    else:
-      # We don't cluster other weights.
-      return None
+    return ClusterableWeightsCA if weight_name == 'w' else None
 
 
 def _build_model():
@@ -111,8 +102,7 @@ def _build_model():
   x = tf.keras.layers.Flatten()(x)
   output = MyDenseLayer(units=10)(x)
 
-  model = tf.keras.Model(inputs=[i], outputs=[output])
-  return model
+  return tf.keras.Model(inputs=[i], outputs=[output])
 
 
 def _build_model_2():
@@ -126,8 +116,7 @@ def _build_model_2():
   x = tf.keras.layers.Flatten()(x)
   output = MyClusterableLayer(units=10)(x)
 
-  model = tf.keras.Model(inputs=[i], outputs=[output])
-  return model
+  return tf.keras.Model(inputs=[i], outputs=[output])
 
 
 def _get_dataset():
@@ -135,8 +124,8 @@ def _get_dataset():
   (x_train, y_train), (x_test, y_test) = mnist.load_data()
   x_train, x_test = x_train / 255.0, x_test / 255.0
   # Use subset of 60000 examples to keep unit test speed fast.
-  x_train = x_train[0:1000]
-  y_train = y_train[0:1000]
+  x_train = x_train[:1000]
+  y_train = y_train[:1000]
   return (x_train, y_train), (x_test, y_test)
 
 
@@ -190,9 +179,7 @@ def _get_number_of_unique_weights(stripped_model, layer_nr, weight_name):
   layer = stripped_model.layers[layer_nr]
   weight = getattr(layer, weight_name)
   weights_as_list = weight.numpy().reshape(-1,).tolist()
-  nr_of_unique_weights = len(set(weights_as_list))
-
-  return nr_of_unique_weights
+  return len(set(weights_as_list))
 
 
 class FunctionalTest(tf.test.TestCase):

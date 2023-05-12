@@ -30,15 +30,17 @@ class Default8BitConvWeightsQuantizer(quantizers.LastValueQuantizer):
 
   def build(self, tensor_shape, name, layer):
     min_weight = layer.add_weight(
-        name + '_min',
-        shape=(tensor_shape[-1],),
+        f'{name}_min',
+        shape=(tensor_shape[-1], ),
         initializer=tf.keras.initializers.Constant(-6.0),
-        trainable=False)
+        trainable=False,
+    )
     max_weight = layer.add_weight(
-        name + '_max',
-        shape=(tensor_shape[-1],),
+        f'{name}_max',
+        shape=(tensor_shape[-1], ),
         initializer=tf.keras.initializers.Constant(6.0),
-        trainable=False)
+        trainable=False,
+    )
 
     return {'min_var': min_weight, 'max_var': max_weight}
 

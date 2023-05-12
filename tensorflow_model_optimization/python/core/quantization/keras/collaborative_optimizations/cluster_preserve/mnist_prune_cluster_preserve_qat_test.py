@@ -42,9 +42,7 @@ def _build_model():
   x = tf.keras.layers.MaxPool2D(2, 2)(x)
   x = tf.keras.layers.Flatten()(x)
   output = tf.keras.layers.Dense(10, name='fc2')(x)
-  model = tf.keras.Model(inputs=[i], outputs=[output])
-
-  return model
+  return tf.keras.Model(inputs=[i], outputs=[output])
 
 
 def _get_dataset():
@@ -217,7 +215,7 @@ def _evaluate_model(interpreter, test_images, test_labels):
   test_labels = test_labels[:300]
 
   prediction_digits = []
-  for _, test_image in enumerate(test_images):
+  for test_image in test_images:
     # Pre-processing: add batch dimension and convert to float32 to match with
     # the model's input data format.
     test_image = np.expand_dims(test_image, axis=0).astype(np.float32)
@@ -232,9 +230,7 @@ def _evaluate_model(interpreter, test_images, test_labels):
 
   # Compare prediction results with ground truth labels to calculate accuracy.
   prediction_digits = np.array(prediction_digits)
-  accuracy = (prediction_digits == test_labels).mean()
-
-  return accuracy
+  return (prediction_digits == test_labels).mean()
 
 
 def _check_tflite_conversion(model, integer_only_quant):

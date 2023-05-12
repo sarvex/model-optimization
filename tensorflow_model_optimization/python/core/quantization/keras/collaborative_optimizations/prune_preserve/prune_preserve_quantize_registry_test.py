@@ -121,13 +121,15 @@ class PrunePreserveDefault8bitQuantizeRegistryTest(tf.test.TestCase):
       if (pqat_layers_config_map[pqat_support_layer].weight_attrs and
           pqat_layers_config_map[pqat_support_layer].quantize_config_attrs):
         self.assertIn(
-            pqat_support_layer, self.prune_registry._LAYERS_WEIGHTS_MAP,
-            msg="Prune doesn't support {}".format(pqat_support_layer))
+            pqat_support_layer,
+            self.prune_registry._LAYERS_WEIGHTS_MAP,
+            msg=f"Prune doesn't support {pqat_support_layer}",
+        )
         self.assertIn(
             pqat_support_layer,
             self.default_8bit_quantize_registry._layer_quantize_map,
-            msg="Default 8bit QAT doesn't support {}".format(
-                pqat_support_layer))
+            msg=f"Default 8bit QAT doesn't support {pqat_support_layer}",
+        )
 
 
 if __name__ == "__main__":

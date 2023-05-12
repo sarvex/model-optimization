@@ -84,14 +84,14 @@ class ClusterWeights(Wrapper):
 
     if not isinstance(number_of_clusters, int):
       raise ValueError(
-          'number_of_clusters must be an integer. Given: {}'.format(
-              number_of_clusters.__class__))
+          f'number_of_clusters must be an integer. Given: {number_of_clusters.__class__}'
+      )
 
     limit_number_of_clusters = 2 if preserve_sparsity else 1
     if number_of_clusters <= limit_number_of_clusters:
       raise ValueError(
-          'number_of_clusters must be greater than {}. Given: {}'.format(
-              limit_number_of_clusters, number_of_clusters))
+          f'number_of_clusters must be greater than {limit_number_of_clusters}. Given: {number_of_clusters}'
+      )
 
     self._track_trackable(layer, name='layer')
 
@@ -141,7 +141,7 @@ class ClusterWeights(Wrapper):
     self.build_input_shape = None
 
   def _make_layer_name(self, layer):
-    return '{}_{}'.format('cluster', layer.name)
+    return f'cluster_{layer.name}'
 
   def get_weight_from_layer(self, weight_name):
     return getattr(self.layer, weight_name)
@@ -165,8 +165,7 @@ class ClusterWeights(Wrapper):
       original_weight = self.get_weight_from_layer(weight_name)
       self.original_clusterable_weights[weight_name] = original_weight
       # Track the variable
-      setattr(self, 'original_weight_' + weight_name,
-              original_weight)
+      setattr(self, f'original_weight_{weight_name}', original_weight)
       # Store the position in layer.weights of original_weight to restore during
       # stripping
       position_original_weight = next(
@@ -180,11 +179,12 @@ class ClusterWeights(Wrapper):
               weight, self.number_of_clusters,
               self.preserve_sparsity).get_cluster_centroids())
       self.cluster_centroids[weight_name] = self.add_weight(
-          '{}{}'.format('cluster_centroids_', weight_name),
-          shape=(self.number_of_clusters,),
+          f'cluster_centroids_{weight_name}',
+          shape=(self.number_of_clusters, ),
           dtype=weight.dtype,
           trainable=True,
-          initializer=tf.keras.initializers.Constant(value=cluster_centroids))
+          initializer=tf.keras.initializers.Constant(value=cluster_centroids),
+      )
 
       # Init the weight clustering algorithm
       if isinstance(self.layer, tf.keras.layers.RNN):
@@ -209,13 +209,14 @@ class ClusterWeights(Wrapper):
           self.clustering_algorithms[weight_name].get_pulling_indices(
               weight))
       self.pulling_indices[weight_name] = self.add_weight(
-          '{}{}'.format('pulling_indices_', weight_name),
+          f'pulling_indices_{weight_name}',
           shape=pulling_indices.shape,
           dtype=tf.int64,
           trainable=False,
           synchronization=tf.VariableSynchronization.ON_READ,
           aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-          initializer=tf.keras.initializers.Constant(value=pulling_indices))
+          initializer=tf.keras.initializers.Constant(value=pulling_indices),
+      )
 
       if self.preserve_sparsity:
         # Init the sparsity mask
@@ -279,14 +280,13 @@ class ClusterWeights(Wrapper):
 
   def get_config(self):
     base_config = super(ClusterWeights, self).get_config()
-    config = {
+    return {
         'number_of_clusters': self.number_of_clusters,
         'cluster_centroids_init': self.cluster_centroids_init,
         'preserve_sparsity': self.preserve_sparsity,
         'cluster_gradient_aggregation': self.cluster_gradient_aggregation,
-        **base_config
+        **base_config,
     }
-    return config
 
   @classmethod
   def from_config(cls, config, custom_objects=None):
@@ -353,9 +353,8 @@ class ClusterWeightsRNN(ClusterWeights):
     return weight_name_with_index[0], int(weight_name_with_index[1])
 
   def get_return_layer_cell(self, index):
-    return_layer_cell = (self.layer.forward_layer.cell if index == 0 else
-                         self.layer.backward_layer.cell)
-    return return_layer_cell
+    return (self.layer.forward_layer.cell
+            if index == 0 else self.layer.backward_layer.cell)
 
   def get_weight_from_layer(self, weight_name):
     weight_name_no_index, i = self.get_weight_name_without_index(weight_name)

@@ -51,8 +51,7 @@ def fast_walsh_hadamard_transform(x):
     # Validate input.
     x = tf.convert_to_tensor(x)
     if x.shape.ndims != 2:
-      raise ValueError(
-          'Number of dimensions of x must be 2. Shape of x: %s' % x.shape)
+      raise ValueError(f'Number of dimensions of x must be 2. Shape of x: {x.shape}')
 
     original_x_shape = x.shape.as_list()
     dim = x.shape.as_list()[-1]

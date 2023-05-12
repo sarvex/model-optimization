@@ -183,28 +183,23 @@ class PruneForLatencyOnXNNPack(PruningPolicy):
           layer.kernel_size == (3, 3) and layer.strides == (1, 1) and
           padding == 'same')
 
-      supported_case_2 = (
-          layer.kernel_size == (3, 3) and
-          (layer.strides == (1, 1) or layer.strides == (2, 2)) and
-          padding == 'valid' and zero_padding and
-          zero_padding.padding == ((1, 1), (1, 1)))
+      supported_case_2 = (layer.kernel_size == (3, 3)
+                          and layer.strides in [(1, 1), (2, 2)]
+                          and padding == 'valid' and zero_padding
+                          and zero_padding.padding == ((1, 1), (1, 1)))
 
       supported_case_3 = (
           layer.kernel_size == (5, 5) and layer.strides == (1, 1) and
           padding == 'same')
 
-      supported_case_4 = (
-          layer.kernel_size == (5, 5) and
-          (layer.strides == (1, 1) or layer.strides == (2, 2)) and
-          padding == 'valid' and zero_padding and
-          zero_padding.padding == ((2, 2), (2, 2)))
+      supported_case_4 = (layer.kernel_size == (5, 5)
+                          and layer.strides in [(1, 1), (2, 2)]
+                          and padding == 'valid' and zero_padding
+                          and zero_padding.padding == ((2, 2), (2, 2)))
 
-      supported = (
-          layer.depth_multiplier == 1 and layer.dilation_rate == (1, 1) and
-          (supported_case_1 or supported_case_2 or supported_case_3 or
-           supported_case_4))
-
-      return supported
+      return (layer.depth_multiplier == 1 and layer.dilation_rate == (1, 1)
+              and (supported_case_1 or supported_case_2 or supported_case_3
+                   or supported_case_4))
     elif isinstance(layer, layers.Conv2D):
       # 1x1 convolution (no stride, no dilation, no padding, no groups).
       return (layer.groups == 1 and layer.dilation_rate == (1, 1) and
@@ -238,7 +233,7 @@ class PruneForLatencyOnXNNPack(PruningPolicy):
       raise ValueError('Unbuilt models are not supported currently.')
 
     # Gather the layers that consume model's input tensors.
-    input_layers = set(inp._keras_history.layer for inp in model.inputs)
+    input_layers = {inp._keras_history.layer for inp in model.inputs}
 
     # Search for the start layer (Conv2D 3x3, `stride = (2, 2)`,
     # `filters = 3`, `padding = `VALID``) in every input branch (forward).
@@ -255,7 +250,7 @@ class PruneForLatencyOnXNNPack(PruningPolicy):
 
     # Search for the end layer (GlobalAveragePooling)
     # for every output branch (backward).
-    output_layers = set(inp._keras_history.layer for inp in model.outputs)
+    output_layers = {inp._keras_history.layer for inp in model.outputs}
     end_layers = self._lookup_layers(
         output_layers,
         self._end_layer_stop_fn,
@@ -276,7 +271,7 @@ class PruneForLatencyOnXNNPack(PruningPolicy):
       return layer in end_layers
 
     _ = self._lookup_layers(
-        sum([self._get_consumers(layer) for layer in start_layers], []),
+        sum((self._get_consumers(layer) for layer in start_layers), []),
         visit_fn,
         self._get_consumers,
     )

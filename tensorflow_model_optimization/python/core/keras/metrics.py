@@ -58,7 +58,7 @@ class MonitorBoolGauge():
       return MonitorBoolGauge._QUANTIZE_APPLY_USAGE
     if name == 'quantize_wrapper_usage':
       return MonitorBoolGauge._QUANTIZE_WRAPPER_USAGE
-    raise ValueError('Invalid gauge name: {}'.format(name))
+    raise ValueError(f'Invalid gauge name: {name}')
 
   def __call__(self, func):
     def inner(*args, **kwargs):
@@ -70,10 +70,7 @@ class MonitorBoolGauge():
         self.bool_gauge.get_cell(MonitorBoolGauge._FAILURE_LABEL).set(True)
         raise error
 
-    if self.bool_gauge:
-      return inner
-
-    return func
+    return inner if self.bool_gauge else func
 
   def set(self, label=None, value=True):
     """Set the bool gauge to value if initialized.

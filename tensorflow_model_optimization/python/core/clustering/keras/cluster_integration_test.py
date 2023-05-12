@@ -131,8 +131,7 @@ class ClusterIntegrationTest(test.TestCase, parameterized.TestCase):
     layer = stripped_model.layers[layer_nr]
     weight = getattr(layer, weight_name)
     weights_as_list = weight.numpy().flatten()
-    nr_of_unique_weights = len(set(weights_as_list))
-    return nr_of_unique_weights
+    return len(set(weights_as_list))
 
   def testDefaultClusteringInit(self):
     """Verifies that default initialization method is KMEANS_PLUS_PLUS."""
@@ -186,7 +185,7 @@ class ClusterIntegrationTest(test.TestCase, parameterized.TestCase):
     # Reset the kernel weights to reflect potential zero drifting of
     # the cluster centroids
     first_layer_weights = original_model.layers[0].get_weights()
-    first_layer_weights[0][:][0:2] = 0.0
+    first_layer_weights[0][:][:2] = 0.0
     first_layer_weights[0][:][3] = [-0.13, -0.08, -0.05, 0.005, 0.13]
     first_layer_weights[0][:][4] = [-0.13, -0.08, -0.05, 0.005, 0.13]
     original_model.layers[0].set_weights(first_layer_weights)
@@ -218,8 +217,8 @@ class ClusterIntegrationTest(test.TestCase, parameterized.TestCase):
     # clustering preserves the original null weights in the original positions
     # of the weight array
     self.assertTrue(
-        np.array_equal(first_layer_weights[0][:][0:2],
-                       weights_after_tuning[:][0:2]))
+        np.array_equal(first_layer_weights[0][:][:2],
+                       weights_after_tuning[:][:2]))
     # Check that the number of unique weights matches the number of clusters.
     self.assertLessEqual(
         nr_of_unique_weights_after,
@@ -382,9 +381,7 @@ class ClusterRNNIntegrationTest(tf.test.TestCase, parameterized.TestCase):
         **self.params_clustering,
     )
     self._train(clustered_model)
-    stripped_model = cluster.strip_clustering(clustered_model)
-
-    return stripped_model
+    return cluster.strip_clustering(clustered_model)
 
   def _assertNbUniqueWeights(self, weight, expected_unique_weights):
     nr_unique_weights = len(np.unique(weight.numpy().flatten()))
@@ -552,8 +549,7 @@ class ClusterMHAIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     inp = tf.keras.layers.Input(shape=(32,32), batch_size=100)
     x = tf.keras.layers.MultiHeadAttention(num_heads=2, key_dim=16)(query=inp, value=inp)
     out = tf.keras.layers.Flatten()(x)
-    model = tf.keras.Model(inputs=inp, outputs=out)
-    return model
+    return tf.keras.Model(inputs=inp, outputs=out)
 
   @keras_parameterized.run_all_keras_modes
   def testMHA(self):

@@ -115,15 +115,11 @@ class PRNGUniformQuantizationEncodingStage(encoding_stage.EncodingStageInterface
     bernoulli = rounding_floats < (x - floored_x)
     quantized_x = floored_x + tf.cast(bernoulli, x.dtype)
 
-    # Include the random seed in the encoded tensors so that it can be used to
-    # generate the same random sequence in the decode method.
-    encoded_tensors = {
+    return {
         self.ENCODED_VALUES_KEY: quantized_x,
         self.SEED_PARAMS_KEY: random_seed,
-        self.MIN_MAX_VALUES_KEY: tf.stack([min_x, max_x])
+        self.MIN_MAX_VALUES_KEY: tf.stack([min_x, max_x]),
     }
-
-    return encoded_tensors
 
   def decode(self,
              encoded_tensors,
@@ -156,8 +152,7 @@ class PRNGUniformQuantizationEncodingStage(encoding_stage.EncodingStageInterface
     # is an unbiased estimator of the original values before quantization.
     q_shifted = quantized_x + rounding_floats - 0.5
 
-    x = q_shifted / max_value * (max_x - min_x) + min_x
-    return x
+    return q_shifted / max_value * (max_x - min_x) + min_x
 
   def _random_floats(self, num_elements, seed, dtype):
     return tf_utils.random_floats(num_elements, seed, dtype)
@@ -259,12 +254,10 @@ class PerChannelUniformQuantizationEncodingStage(
     else:  # Deterministic rounding.
       quantized_x = tf.round(x)
 
-    encoded_tensors = {
+    return {
         self.ENCODED_VALUES_KEY: quantized_x,
-        self.MIN_MAX_VALUES_KEY: tf.stack([min_x, max_x])
+        self.MIN_MAX_VALUES_KEY: tf.stack([min_x, max_x]),
     }
-
-    return encoded_tensors
 
   def decode(self,
              encoded_tensors,
@@ -386,15 +379,11 @@ class PerChannelPRNGUniformQuantizationEncodingStage(
     bernoulli = rounding_floats < (x - floored_x)
     quantized_x = floored_x + tf.cast(bernoulli, x.dtype)
 
-    # Include the random seed in the encoded tensors so that it can be used to
-    # generate the same random sequence in the decode method.
-    encoded_tensors = {
+    return {
         self.ENCODED_VALUES_KEY: quantized_x,
         self.SEED_PARAMS_KEY: random_seed,
-        self.MIN_MAX_VALUES_KEY: tf.stack([min_x, max_x])
+        self.MIN_MAX_VALUES_KEY: tf.stack([min_x, max_x]),
     }
-
-    return encoded_tensors
 
   def decode(self,
              encoded_tensors,

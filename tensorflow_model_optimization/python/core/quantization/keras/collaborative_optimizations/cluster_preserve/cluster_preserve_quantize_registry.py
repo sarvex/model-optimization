@@ -171,10 +171,7 @@ class ClusterPreserveQuantizeRegistry(object):
     if cls._no_trainable_weights(layer):
       return True
 
-    if layer.__class__ in cls._LAYERS_CONFIG_MAP:
-      return True
-
-    return False
+    return layer.__class__ in cls._LAYERS_CONFIG_MAP
 
   @classmethod
   def _weight_names(cls, layer):
@@ -195,7 +192,7 @@ class ClusterPreserveQuantizeRegistry(object):
       The quantize_config with addon cluster preserve weight_quantizer.
     """
     if not self.supports(layer):
-      raise ValueError('Layer ' + str(layer.__class__) + ' is not supported.')
+      raise ValueError(f'Layer {str(layer.__class__)} is not supported.')
 
     # Example: ReLU, Softmax, and AveragePooling2D (without trainable weights)
     # DepthwiseConv2D (cluster_preserve is disabled)
@@ -236,11 +233,9 @@ class Default8bitClusterPreserveQuantizeRegistry(
     quantize_config = (default_8bit_quantize_registry.
                        Default8BitQuantizeRegistry().
                        get_quantize_config(layer))
-    cluster_aware_quantize_config = super(
-        Default8bitClusterPreserveQuantizeRegistry,
-        self).apply_cluster_preserve_quantize_config(layer, quantize_config)
-
-    return cluster_aware_quantize_config
+    return super(Default8bitClusterPreserveQuantizeRegistry,
+                 self).apply_cluster_preserve_quantize_config(
+                     layer, quantize_config)
 
 
 class ClusterPreserveDefaultWeightsQuantizer(quantizers.LastValueQuantizer):
@@ -303,9 +298,7 @@ class ClusterPreserveDefaultWeightsQuantizer(quantizers.LastValueQuantizer):
 
     # Prepare clustering variables for the Keras graph when clusters
     # exist, assuming we do not use number_of_clusters larger than 1024
-    if num_centroids > 1024:
-      return result
-    else:
+    if num_centroids <= 1024:
       clst_centroids_tf = layer.add_weight(
           CLUSTER_CENTROIDS,
           shape=centroids.shape,
@@ -348,8 +341,8 @@ class ClusterPreserveDefaultWeightsQuantizer(quantizers.LastValueQuantizer):
           CLUSTERING_IMPL: clustering_impl,
           CENTROIDS_MASK: centroids_mask,
       }
-      result.update(result_clst)
-      return result
+      result |= result_clst
+    return result
 
   def build(self, tensor_shape, name, layer):
     """Build (P)CQAT wrapper.

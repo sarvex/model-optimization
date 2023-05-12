@@ -67,8 +67,8 @@ class SVD(algorithm.WeightCompressor):
 
   def get_compressible_weights(
       self, original_layer: tf.keras.layers.Layer) -> List[str]:
-    if isinstance(original_layer, tf.keras.layers.Conv2D) or \
-       isinstance(original_layer, tf.keras.layers.Dense):
+    if isinstance(original_layer,
+                  (tf.keras.layers.Conv2D, tf.keras.layers.Dense)):
       return [original_layer.kernel]
     return []
 

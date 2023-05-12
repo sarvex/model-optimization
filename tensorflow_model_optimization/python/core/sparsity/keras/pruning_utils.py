@@ -323,11 +323,7 @@ def generate_m_by_n_mask(weights, m_by_n=(2, 4)):
   reshaped_sparsity_mask_pad = tf.reshape(sparsity_mask_pad,
                                           tf.shape(abs_weights_pad))
 
-  # remove padding from mask
-  sparsity_mask = tf.slice(reshaped_sparsity_mask_pad, [0, 0],
-                           abs_weights.shape)
-
-  return sparsity_mask
+  return tf.slice(reshaped_sparsity_mask_pad, [0, 0], abs_weights.shape)
 
 
 def is_pruned_m_by_n(weights, m_by_n=(2, 4), last_channel: str = "C_OUT"):

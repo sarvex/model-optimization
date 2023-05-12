@@ -267,12 +267,9 @@ class DefaultNBitQuantizeRegistry(
       return True
 
     if self._is_rnn_layer(layer):
-      for rnn_cell in self._get_rnn_cells(layer):
-        # All cells in the RNN layer should be supported.
-        if not self._is_supported_layer(rnn_cell.__class__):
-          return False
-      return True
-
+      return all(
+          self._is_supported_layer(rnn_cell.__class__)
+          for rnn_cell in self._get_rnn_cells(layer))
     return False
 
   def _get_quantize_config(self, layer_type):
@@ -300,10 +297,8 @@ class DefaultNBitQuantizeRegistry(
     """
     if not self.supports(layer):
       raise ValueError(
-          '`get_quantize_config()` called on an unsupported layer {}. Check '
-          'if layer is supported by calling `supports()`. Alternatively, you '
-          'can use `QuantizeConfig` to specify a behavior for your layer.'
-          .format(layer.__class__))
+          f'`get_quantize_config()` called on an unsupported layer {layer.__class__}. Check if layer is supported by calling `supports()`. Alternatively, you can use `QuantizeConfig` to specify a behavior for your layer.'
+      )
 
     if self._is_supported_layer(layer.__class__):
       return self._get_quantize_config(layer.__class__)
@@ -324,7 +319,7 @@ class DefaultNBitQuantizeRegistry(
           num_bits_activation=self._num_bits_activation)
 
     # Should never come here.
-    raise ValueError('Invalid Layer type {}'.format(layer.__class__))
+    raise ValueError(f'Invalid Layer type {layer.__class__}')
 
 
 class DefaultNBitQuantizeConfig(QuantizeConfig):
@@ -358,35 +353,30 @@ class DefaultNBitQuantizeConfig(QuantizeConfig):
   def set_quantize_weights(self, layer, quantize_weights):
     if len(self.weight_attrs) != len(quantize_weights):
       raise ValueError(
-          '`set_quantize_weights` called on layer {} with {} '
-          'weight parameters, but layer expects {} values.'.format(
-              layer.name, len(quantize_weights), len(self.weight_attrs)))
+          f'`set_quantize_weights` called on layer {layer.name} with {len(quantize_weights)} weight parameters, but layer expects {len(self.weight_attrs)} values.'
+      )
 
     for weight_attr, weight in zip(self.weight_attrs, quantize_weights):
       current_weight = getattr(layer, weight_attr)
       if current_weight.shape != weight.shape:
-        raise ValueError('Existing layer weight shape {} is incompatible with'
-                         'provided weight shape {}'.format(
-                             current_weight.shape, weight.shape))
+        raise ValueError(
+            f'Existing layer weight shape {current_weight.shape} is incompatible withprovided weight shape {weight.shape}'
+        )
 
       setattr(layer, weight_attr, weight)
 
   def set_quantize_activations(self, layer, quantize_activations):
     if len(self.activation_attrs) != len(quantize_activations):
       raise ValueError(
-          '`set_quantize_activations` called on layer {} with {} '
-          'activation parameters, but layer expects {} values.'.format(
-              layer.name, len(quantize_activations),
-              len(self.activation_attrs)))
+          f'`set_quantize_activations` called on layer {layer.name} with {len(quantize_activations)} activation parameters, but layer expects {len(self.activation_attrs)} values.'
+      )
 
     for activation_attr, activation in zip(
         self.activation_attrs, quantize_activations):
       setattr(layer, activation_attr, activation)
 
   def get_output_quantizers(self, layer):
-    if self.quantize_output:
-      return [self.activation_quantizer]
-    return []
+    return [self.activation_quantizer] if self.quantize_output else []
 
   @classmethod
   def from_config(cls, config):
@@ -434,36 +424,32 @@ class DefaultNBitQuantizeConfigRNN(DefaultNBitQuantizeConfig,
     weights_quantizers = []
     for weight_attrs_cell, rnn_cell in zip(
         self.weight_attrs, self._get_rnn_cells(layer)):
-      for weight_attr in weight_attrs_cell:
-        weights_quantizers.append(
-            (getattr(rnn_cell, weight_attr), self.weight_quantizer))
-
+      weights_quantizers.extend(
+          (getattr(rnn_cell, weight_attr), self.weight_quantizer)
+          for weight_attr in weight_attrs_cell)
     return weights_quantizers
 
   def get_activations_and_quantizers(self, layer):
     activations_quantizers = []
     for activation_attrs_cell, rnn_cell in zip(
         self.activation_attrs, self._get_rnn_cells(layer)):
-      for activation_attr in activation_attrs_cell:
-        activations_quantizers.append(
-            (getattr(rnn_cell, activation_attr), self.activation_quantizer))
-
+      activations_quantizers.extend(
+          (getattr(rnn_cell, activation_attr), self.activation_quantizer)
+          for activation_attr in activation_attrs_cell)
     return activations_quantizers
 
   def _flatten(self, list_of_lists):
     flat_list = []
     for sublist in list_of_lists:
-      for item in sublist:
-        flat_list.append(item)
+      flat_list.extend(iter(sublist))
     return flat_list
 
   def set_quantize_weights(self, layer, quantize_weights):
     flattened_weight_attrs = self._flatten(self.weight_attrs)
     if len(flattened_weight_attrs) != len(quantize_weights):
       raise ValueError(
-          '`set_quantize_weights` called on layer {} with {} '
-          'weight parameters, but layer expects {} values.'.format(
-              layer.name, len(quantize_weights), len(flattened_weight_attrs)))
+          f'`set_quantize_weights` called on layer {layer.name} with {len(quantize_weights)} weight parameters, but layer expects {len(flattened_weight_attrs)} values.'
+      )
 
     i = 0
     for weight_attrs_cell, rnn_cell in zip(
@@ -473,9 +459,9 @@ class DefaultNBitQuantizeConfigRNN(DefaultNBitQuantizeConfig,
         quantize_weight = quantize_weights[i]
 
         if current_weight.shape != quantize_weight.shape:
-          raise ValueError('Existing layer weight shape {} is incompatible with'
-                           'provided weight shape {}'.format(
-                               current_weight.shape, quantize_weight.shape))
+          raise ValueError(
+              f'Existing layer weight shape {current_weight.shape} is incompatible withprovided weight shape {quantize_weight.shape}'
+          )
 
         setattr(rnn_cell, weight_attr, quantize_weight)
         i += 1
@@ -484,10 +470,8 @@ class DefaultNBitQuantizeConfigRNN(DefaultNBitQuantizeConfig,
     flattened_activation_attrs = self._flatten(self.activation_attrs)
     if len(flattened_activation_attrs) != len(quantize_activations):
       raise ValueError(
-          '`set_quantize_activations` called on layer {} with {} '
-          'activation parameters, but layer expects {} values.'.format(
-              layer.name, len(quantize_activations),
-              len(flattened_activation_attrs)))
+          f'`set_quantize_activations` called on layer {layer.name} with {len(quantize_activations)} activation parameters, but layer expects {len(flattened_activation_attrs)} values.'
+      )
 
     i = 0
     for activation_attrs_cell, rnn_cell in zip(
@@ -532,9 +516,9 @@ class DefaultNBitActivationQuantizeConfig(QuantizeConfig):
     self._assert_activation_layer(layer)
 
     if not hasattr(layer.activation, '__name__'):
-      raise ValueError('Activation {} not supported by '
-                       'DefaultNBitActivationQuantizeConfig.'.format(
-                           layer.activation))
+      raise ValueError(
+          f'Activation {layer.activation} not supported by DefaultNBitActivationQuantizeConfig.'
+      )
 
     if layer.activation.__name__ in ['relu', 'swish']:
       # 'relu' should generally get fused into the previous layer.
@@ -545,9 +529,9 @@ class DefaultNBitActivationQuantizeConfig(QuantizeConfig):
         'linear', 'softmax', 'sigmoid', 'tanh']:
       return []
 
-    raise ValueError('Activation {} not supported by '
-                     'DefaultNBitActivationQuantizeConfig.'.format(
-                         layer.activation))
+    raise ValueError(
+        f'Activation {layer.activation} not supported by DefaultNBitActivationQuantizeConfig.'
+    )
 
   def get_config(self) -> Dict[str, Any]:
     return {

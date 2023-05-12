@@ -62,8 +62,7 @@ class ClusterPreserveIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     else:
       weight = getattr(layer, weight_name)
     weights_as_list = weight.numpy().flatten()
-    nr_of_unique_weights = len(set(weights_as_list))
-    return nr_of_unique_weights
+    return len(set(weights_as_list))
 
   def _get_sparsity(self, model):
     sparsity_list = []
@@ -88,7 +87,7 @@ class ClusterPreserveIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     # Manually set sparsity in the Dense layer if preserve_sparsity is on
     if preserve_sparsity:
       first_layer_weights = original_model.layers[0].get_weights()
-      first_layer_weights[0][:][0:2] = 0.0
+      first_layer_weights[0][:][:2] = 0.0
       original_model.layers[0].set_weights(first_layer_weights)
 
     # Start the sparsity-aware clustering
@@ -98,10 +97,8 @@ class ClusterPreserveIntegrationTest(tf.test.TestCase, parameterized.TestCase):
         'preserve_sparsity': True
     }
 
-    clustered_model = experimental_cluster.cluster_weights(
-        original_model, **clustering_params)
-
-    return clustered_model
+    return experimental_cluster.cluster_weights(original_model,
+                                                **clustering_params)
 
   def _pcqat_training(self, preserve_sparsity, quant_aware_annotate_model):
     """PCQAT training on the input model."""
@@ -209,9 +206,8 @@ class ClusterPreserveIntegrationTest(tf.test.TestCase, parameterized.TestCase):
         clustered_model, 1, 'kernel')
 
     def apply_quantization_to_dense(layer):
-      if isinstance(layer, tf.keras.layers.Dense):
-        if layer.name == 'qat':
-          return quantize.quantize_annotate_layer(layer)
+      if isinstance(layer, tf.keras.layers.Dense) and layer.name == 'qat':
+        return quantize.quantize_annotate_layer(layer)
       return layer
 
     quant_aware_annotate_model = tf.keras.models.clone_model(
@@ -263,8 +259,7 @@ class ClusterPreserveIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     # clustering preserves the original zero weights in the original positions
     # of the weight array
     self.assertTrue(
-        np.array_equal(first_layer_weights[:][0:2],
-                       weights_after_tuning[:][0:2]))
+        np.array_equal(first_layer_weights[:][:2], weights_after_tuning[:][:2]))
 
     # Check sparsity before the input of PCQAT
     sparsity_pruning = self._get_sparsity(stripped_model_clustered)

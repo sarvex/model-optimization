@@ -127,7 +127,7 @@ def main(unused_argv):
   # Check the model is compressed
   print('Compression ratio: ', len(tflite_model) / len(tflite_model_dense))
 
-  tflite_model_path = '/tmp/sparse_mnist_%s_2x2.tflite' % FLAGS.sparsity
+  tflite_model_path = f'/tmp/sparse_mnist_{FLAGS.sparsity}_2x2.tflite'
   with open(tflite_model_path, 'wb') as f:
     f.write(tflite_model)
 
@@ -157,7 +157,7 @@ def main(unused_argv):
   # Check the model is compressed
   print('Compression ratio: ', len(tflite_model) / len(tflite_model_dense))
 
-  tflite_model_path = '/tmp/sparse_mnist_%s_1x4.tflite' % FLAGS.sparsity
+  tflite_model_path = f'/tmp/sparse_mnist_{FLAGS.sparsity}_1x4.tflite'
   with open(tflite_model_path, 'wb') as f:
     f.write(tflite_model)
 
@@ -188,7 +188,7 @@ def main(unused_argv):
   # Check the model is compressed
   print('Compression ratio: ', len(tflite_model) / len(tflite_model_dense))
 
-  tflite_model_path = '/tmp/sparse_mnist_%s_1x16.tflite' % FLAGS.sparsity
+  tflite_model_path = f'/tmp/sparse_mnist_{FLAGS.sparsity}_1x16.tflite'
   with open(tflite_model_path, 'wb') as f:
     f.write(tflite_model)
 

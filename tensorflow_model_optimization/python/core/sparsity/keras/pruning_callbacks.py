@@ -56,9 +56,7 @@ class UpdatePruningStep(callbacks.Callback):
     # If the model is newly created/initialized, set the 'pruning_step' to 0.
     # If the model is saved and then restored, do nothing.
     if self.prunable_layers[0].pruning_step == -1:
-      tuples = []
-      for layer in self.prunable_layers:
-        tuples.append((layer.pruning_step, 0))
+      tuples = [(layer.pruning_step, 0) for layer in self.prunable_layers]
       K.batch_set_value(tuples)
 
   def on_epoch_end(self, batch, logs=None):
@@ -90,8 +88,8 @@ class PruningSummaries(callbacks.TensorBoard):
 
     super(PruningSummaries, self).__init__(
         log_dir=log_dir, update_freq=update_freq, **kwargs)
-    if not compat.is_v1_apis():  # TF 2.X
-      log_dir = self.log_dir + '/metrics'
+    if not compat.is_v1_apis():# TF 2.X
+      log_dir = f'{self.log_dir}/metrics'
       self._file_writer = tf.summary.create_file_writer(log_dir)
 
   def _log_pruning_metrics(self, logs, prefix, step):
@@ -110,14 +108,11 @@ class PruningSummaries(callbacks.TensorBoard):
     if logs is not None:
       super(PruningSummaries, self).on_epoch_begin(epoch, logs)
 
-    pruning_logs = {}
     params = []
     prunable_layers = pruning_wrapper.collect_prunable_layers(self.model)
     for layer in prunable_layers:
       for _, mask, threshold in layer.pruning_vars:
-        params.append(mask)
-        params.append(threshold)
-
+        params.extend((mask, threshold))
     params.append(self.model.optimizer.iterations)
 
     values = K.batch_get_value(params)
@@ -127,12 +122,11 @@ class PruningSummaries(callbacks.TensorBoard):
 
     param_value_pairs = list(zip(params, values))
 
-    for mask, mask_value in param_value_pairs[::2]:
-      pruning_logs.update({
-          mask.name + '/sparsity': 1 - np.mean(mask_value)
-      })
-
+    pruning_logs = {
+        f'{mask.name}/sparsity': 1 - np.mean(mask_value)
+        for mask, mask_value in param_value_pairs[::2]
+    }
     for threshold, threshold_value in param_value_pairs[1::2]:
-      pruning_logs.update({threshold.name + '/threshold': threshold_value})
+      pruning_logs[f'{threshold.name}/threshold'] = threshold_value
 
     self._log_pruning_metrics(pruning_logs, '', iteration)

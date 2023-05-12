@@ -103,11 +103,10 @@ def split_dict_py_tf(dictionary):
   for k, v in six.iteritems(dictionary):
     if isinstance(v, dict):
       d_py[k], d_tf[k] = split_dict_py_tf(v)
+    elif tf.is_tensor(v):
+      d_tf[k] = v
     else:
-      if tf.is_tensor(v):
-        d_tf[k] = v
-      else:
-        d_py[k] = v
+      d_py[k] = v
   return d_py, d_tf
 
 
@@ -135,12 +134,12 @@ def merge_dicts(dict1, dict2):
       If the input dictionaries do not have corresponding structure.
   """
   merged_dict = {}
-  if not (isinstance(dict1, dict) and isinstance(dict2, dict)):
+  if not isinstance(dict1, dict) or not isinstance(dict2, dict):
     raise TypeError
 
   for k, v in six.iteritems(dict1):
     if isinstance(v, dict):
-      if not (k in dict2 and isinstance(dict2[k], dict)):
+      if k not in dict2 or not isinstance(dict2[k], dict):
         raise ValueError('Dictionaries must have the same structure.')
       merged_dict[k] = merge_dicts(v, dict2[k])
     else:
@@ -148,13 +147,13 @@ def merge_dicts(dict1, dict2):
 
   for k, v in six.iteritems(dict2):
     if isinstance(v, dict):
-      if not (k in dict1 and isinstance(dict1[k], dict)):
+      if k not in dict1 or not isinstance(dict1[k], dict):
         # This should have been merged in previous loop.
         raise ValueError('Dictionaries must have the same structure.')
+    elif k in merged_dict:
+      raise ValueError('Dictionaries cannot contain the same key, unless the '
+                       'corresponding values are dictionaries.')
     else:
-      if k in merged_dict:
-        raise ValueError('Dictionaries cannot contain the same key, unless the '
-                         'corresponding values are dictionaries.')
       merged_dict[k] = v
 
   return merged_dict

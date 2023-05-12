@@ -40,8 +40,7 @@ class ClusteringLookupRegistry(object):
     # Clusterable layer could provide own implementation of get_pulling_indices
     if (issubclass(layer.__class__, clusterable_layer.ClusterableLayer) and
         layer.get_clusterable_algorithm is not None):
-      ans = layer.get_clusterable_algorithm(weight_name)
-      if ans:
+      if ans := layer.get_clusterable_algorithm(weight_name):
         return ans
     return ClusteringAlgorithm
 
@@ -119,30 +118,20 @@ class ClusteringRegistry(object):
       return True
 
     if layer.__class__ in cls._SUPPORTED_RNN_LAYERS:
-      for cell in cls._get_rnn_cells(layer):
-        if (cell.__class__ not in cls._SUPPORTED_RNN_CELLS
-            or isinstance(cell, clusterable_layer.ClusterableLayer)):
-          return False
-      return True
+      return not any((cell.__class__ not in cls._SUPPORTED_RNN_CELLS
+                      or isinstance(cell, clusterable_layer.ClusterableLayer))
+                     for cell in cls._get_rnn_cells(layer))
+    return layer.__class__ in cls._SUPPORTED_MHA_LAYERS
 
-    if layer.__class__ in cls._SUPPORTED_MHA_LAYERS:
-      return True
-
-    return False
-
-  def _get_rnn_cells(rnn_layer):  # pylint: disable=no-self-argument
+  def _get_rnn_cells(self):  # pylint: disable=no-self-argument
     """Get rnn cells from layer."""
 
-    if isinstance(rnn_layer, tf.keras.layers.Bidirectional):
-      return [rnn_layer.forward_layer.cell, rnn_layer.backward_layer.cell]
-    if isinstance(rnn_layer.cell, tf.keras.layers.StackedRNNCells):
-      return rnn_layer.cell.cells
+    if isinstance(self, tf.keras.layers.Bidirectional):
+      return [self.forward_layer.cell, self.backward_layer.cell]
+    if isinstance(self.cell, tf.keras.layers.StackedRNNCells):
+      return self.cell.cells
     # The case when RNN contains multiple cells
-    if isinstance(rnn_layer.cell, (list, tuple)):
-      return rnn_layer.cell
-    # The case when RNN contains a single cell
-    else:
-      return [rnn_layer.cell]
+    return self.cell if isinstance(self.cell, (list, tuple)) else [self.cell]
 
   @classmethod
   def _weight_names(cls, layer):
@@ -164,28 +153,29 @@ class ClusteringRegistry(object):
     """
 
     if not cls.supports(layer):
-      raise ValueError('Layer ' + str(layer.__class__) + ' is not supported.')
+      raise ValueError(f'Layer {str(layer.__class__)} is not supported.')
 
     def get_clusterable_weights():
       return [(weight_name, getattr(layer, weight_name))
               for weight_name in cls._weight_names(layer)]
 
-    def get_clusterable_weights_rnn():  # pylint: disable=missing-docstring
+    def get_clusterable_weights_rnn():# pylint: disable=missing-docstring
       def get_clusterable_weights_rnn_cell(cell, i):
         # Cell weights will be a list of tuples in RNN or
         # when are wrapped by the StackedRNNCell layer
         # The weight names will have indices attached only
         # for the registry
         if cell.__class__ in cls._SUPPORTED_RNN_CELLS:
-          return [('kernel/' + str(i), cell.kernel),
-                  ('recurrent_kernel/' + str(i), cell.recurrent_kernel)]
+          return [
+              (f'kernel/{str(i)}', cell.kernel),
+              (f'recurrent_kernel/{str(i)}', cell.recurrent_kernel),
+          ]
 
         if isinstance(cell, clusterable_layer.ClusterableLayer):
           raise ValueError(
               'ClusterableLayer is not yet supported for RNNs based layer.')
 
-        raise ValueError('Layer cell ' + str(cell.__class__) +
-                         ' is not supported.')
+        raise ValueError(f'Layer cell {str(cell.__class__)} is not supported.')
 
       clusterable_weights = []
       for rnn_cell in cls._get_rnn_cells(layer):

@@ -99,9 +99,7 @@ class SplitBySmallValueEncodingStage(encoding_stage.EncodingStageInterface):
     shape = tf.cast(shape, tf.int64)
     sparse_tensor = tf.SparseTensor(indices=indices, values=non_zero_x,
                                     dense_shape=shape)
-    decoded_x = tf.sparse.to_dense(sparse_tensor)
-
-    return decoded_x
+    return tf.sparse.to_dense(sparse_tensor)
 
 
 @encoding_stage.tf_style_encoding_stage
@@ -150,11 +148,10 @@ class DifferenceBetweenIntegersEncodingStage(
     """See base class."""
     del encode_params  # Unused.
     if x.shape.ndims != 1:
-      raise ValueError('Number of dimensions must be 1. Shape of x: %s' %
-                       x.shape)
+      raise ValueError(f'Number of dimensions must be 1. Shape of x: {x.shape}')
     if not x.dtype.is_integer:
       raise TypeError(
-          'Unsupported input type: %s. Support only integer types.' % x.dtype)
+          f'Unsupported input type: {x.dtype}. Support only integer types.')
 
     diff_x = x - tf.concat([[0], x[:-1]], 0)
     return {

@@ -122,10 +122,7 @@ def list_to_named_parameters(param_name, options):
     return camelcase
 
   def name(s):
-    if isinstance(s, str):
-      return s
-
-    return s.__name__
+    return s if isinstance(s, str) else s.__name__
 
   named_params = []
   for key in options:

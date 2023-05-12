@@ -197,12 +197,10 @@ class RandomAddSubtractOneEncodingStageTest(test_utils.BaseEncodingStageTest):
     encode_params, decode_params = stage.get_params()
     encoded_x, decoded_x = self.encode_decode_x(stage, x, encode_params,
                                                 decode_params)
-    test_data = []
-    for _ in range(100):
-      test_data.append(
-          test_utils.TestData(
-              *self.evaluate_tf_py_list([x, encoded_x, decoded_x])))
-
+    test_data = [
+        test_utils.TestData(*self.evaluate_tf_py_list([x, encoded_x, decoded_x]))
+        for _ in range(100)
+    ]
     # Check that the average error created by encoding is significantly larger
     # than error of average of encodings. This is an simple (imperfect)
     # empirical check that the encoding is unbiased.
@@ -536,7 +534,7 @@ class TestUtilsTest(tf.test.TestCase, parameterized.TestCase):
     # Assert that unknown shape corresponds to a value of actually random shape
     # at execution time.
     samples = [self.evaluate(x) for _ in range(10)]
-    self.assertGreater(len(set([len(s) for s in samples])), 1)
+    self.assertGreater(len({len(s) for s in samples}), 1)
 
     # Test that source_fn has effect on the output values.
     x_uniform = test_utils.get_tensor_with_random_shape(

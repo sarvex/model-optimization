@@ -126,9 +126,14 @@ def evaluate_model_fp32(model, image_test, label_test):
 def print_unique_weights(model):
   """Check Dense and Conv2D layers."""
   for layer in model.layers:
-    if (isinstance(layer, tf.keras.layers.Conv2D)
-        or isinstance(layer, tf.keras.layers.Dense)
-        or isinstance(layer, quantize.quantize_wrapper.QuantizeWrapper)):
+    if isinstance(
+        layer,
+        (
+            tf.keras.layers.Conv2D,
+            tf.keras.layers.Dense,
+            quantize.quantize_wrapper.QuantizeWrapper,
+        ),
+    ):
       for weights in layer.trainable_weights:
         np_weights = tf.keras.backend.get_value(weights)
         unique_weights = len(np.unique(np_weights))
@@ -166,8 +171,7 @@ def evaluate_model(interpreter, test_images, test_labels):
   print('\n')
   # Compare prediction results with ground truth labels to calculate accuracy.
   prediction_digits = np.array(prediction_digits)
-  accuracy = (prediction_digits == test_labels).mean()
-  return accuracy
+  return (prediction_digits == test_labels).mean()
 
 
 def main(unused_args):

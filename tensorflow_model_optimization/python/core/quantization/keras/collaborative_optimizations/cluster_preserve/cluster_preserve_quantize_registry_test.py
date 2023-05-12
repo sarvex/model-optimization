@@ -141,13 +141,15 @@ class ClusterPreserveDefault8bitQuantizeRegistryTest(tf.test.TestCase):
       if cqat_layers_config_map[cqat_support_layer].weight_attrs and (
           cqat_layers_config_map[cqat_support_layer].quantize_config_attrs):
         self.assertIn(
-            cqat_support_layer, self.cluster_registry._LAYERS_WEIGHTS_MAP,
-            msg='Clusteirng doesn\'t support {}'.format(cqat_support_layer))
+            cqat_support_layer,
+            self.cluster_registry._LAYERS_WEIGHTS_MAP,
+            msg=f"Clusteirng doesn\'t support {cqat_support_layer}",
+        )
         self.assertIn(
             cqat_support_layer,
             self.default_8bit_quantize_registry._layer_quantize_map,
-            msg='Default 8bit QAT doesn\'t support {}'.format(
-                cqat_support_layer))
+            msg=f"Default 8bit QAT doesn\'t support {cqat_support_layer}",
+        )
 
 
 if __name__ == '__main__':

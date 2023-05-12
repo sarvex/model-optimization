@@ -264,8 +264,7 @@ class KashinHadamardEncodingStage(encoding_stage.EncodingStageInterface):
   def _validate_and_expand_encode_input(self, x):
     """Validates the input to encode and modifies it if necessary."""
     if x.shape.ndims not in [1, 2]:
-      raise ValueError(
-          'Number of dimensions must be 1 or 2. Shape of x: %s' % x.shape)
+      raise ValueError(f'Number of dimensions must be 1 or 2. Shape of x: {x.shape}')
     if x.shape.ndims == 1:
       # The input to the fast_walsh_hadamard_transform must have 2 dimensions.
       x = tf.expand_dims(x, 0)

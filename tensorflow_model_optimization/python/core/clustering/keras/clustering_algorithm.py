@@ -77,13 +77,9 @@ class ClusteringAlgorithm(object):
       ND array of the same shape as `weight` parameter of the type
       tf.int32. The returned array contain weight lookup indices
     """
-    # We find the nearest cluster centroids and store them so that ops can build
-    # their kernels upon it.
-    pulling_indices = tf.argmin(
+    return tf.argmin(
         tf.abs(tf.expand_dims(weight, axis=-1) - self.cluster_centroids),
         axis=-1)
-
-    return pulling_indices
 
   def get_clustered_weight(self, pulling_indices, original_weight):
     """Returns clustered weights with custom gradients.

@@ -88,17 +88,13 @@ def _get_quantize_config(layer_node):
 
 
 def _has_custom_quantize_config(*layer_nodes):
-  for layer_node in layer_nodes:
-    if _get_quantize_config(layer_node) is not None:
-      return True
-  return False
+  return any(
+      _get_quantize_config(layer_node) is not None
+      for layer_node in layer_nodes)
 
 
 def _normalize_tuple(value):
-  if isinstance(value, int):
-    return (value,)
-  else:
-    return tuple(value)
+  return (value, ) if isinstance(value, int) else tuple(value)
 
 
 class Conv2DBatchNormQuantize(transforms.Transform):
@@ -404,11 +400,7 @@ class SeparableConv1DQuantize(transforms.Transform):
     if sepconv1d_config['use_bias']:
       sepconv2d_weights['bias:0'] = sepconv1d_weights[2]
 
-    if sepconv1d_config['data_format'] == 'channels_last':
-      spatial_dim = 1
-    else:
-      spatial_dim = 2
-
+    spatial_dim = 1 if sepconv1d_config['data_format'] == 'channels_last' else 2
     sepconv2d_layer_config = keras.layers.serialize(sepconv2d_layer)
     sepconv2d_layer_config['name'] = sepconv2d_layer.name
 
@@ -592,11 +584,7 @@ class InputLayerQuantize(transforms.Transform):
     layer_config = keras.layers.serialize(quant_layer)
     layer_config['name'] = quant_layer.name
 
-    quant_layer_node = LayerNode(
-        layer_config,
-        input_layers=[match_layer])
-
-    return quant_layer_node
+    return LayerNode(layer_config, input_layers=[match_layer])
 
   def custom_objects(self):
     return {
@@ -620,10 +608,11 @@ class ConcatTransform(transforms.Transform):
     if layer_class_name == 'QuantizeLayer':
       return quantize_layer.QuantizeLayer
     keras_layers = inspect.getmembers(tf.keras.layers, inspect.isclass)
-    for layer_name, layer_type in keras_layers:
-      if layer_name == layer_class_name:
-        return layer_type
-    return None
+    return next(
+        (layer_type for layer_name, layer_type in keras_layers
+         if layer_name == layer_class_name),
+        None,
+    )
 
   def _disable_output_quantize(self, quantize_config):
     # TODO(pulkitb): Disabling quantize_config may also require handling

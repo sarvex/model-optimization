@@ -213,8 +213,7 @@ class HadamardEncodingStage(encoding_stage.EncodingStageInterface):
   def _validate_and_expand_encode_input(self, x):
     """Validates the input to encode and modifies it if necessary."""
     if x.shape.ndims not in [1, 2]:
-      raise ValueError(
-          'Number of dimensions must be 1 or 2. Shape of x: %s' % x.shape)
+      raise ValueError(f'Number of dimensions must be 1 or 2. Shape of x: {x.shape}')
     if x.shape.ndims == 1:
       # The input to the fast_walsh_hadamard_transform must have 2 dimensions.
       x = tf.expand_dims(x, 0)
@@ -313,10 +312,7 @@ class UniformQuantizationEncodingStage(encoding_stage.EncodingStageInterface):
   def commutes_with_sum(self):
     """See base class."""
     # The stage commutes with sum only if min_max values are shared.
-    if self._min_max is not None:
-      return True
-    else:
-      return False
+    return self._min_max is not None
 
   @property
   def decode_needs_input_shape(self):
@@ -381,8 +377,7 @@ class UniformQuantizationEncodingStage(encoding_stage.EncodingStageInterface):
     else:
       shift = min_x
 
-    x = quantized_x / max_value * (max_x - min_x) + shift
-    return x
+    return quantized_x / max_value * (max_x - min_x) + shift
 
 
 @encoding_stage.tf_style_encoding_stage

@@ -105,7 +105,7 @@ class TFStyleEncodeDecodeTest(tf.test.TestCase, parameterized.TestCase):
       self._assert_all_graph_nodes_in_name_scope(graph, name)
     else:
       self._assert_all_graph_nodes_in_name_scope(
-          graph, self._DEFAULT_NAME + '_initial_state')
+          graph, f'{self._DEFAULT_NAME}_initial_state')
     # The functionality is not modified.
     self.assertEqual(1.0, initial_state['state'])
 
@@ -127,7 +127,7 @@ class TFStyleEncodeDecodeTest(tf.test.TestCase, parameterized.TestCase):
       self._assert_all_graph_nodes_in_name_scope(graph, name)
     else:
       self._assert_all_graph_nodes_in_name_scope(
-          graph, self._DEFAULT_NAME + '_update_state')
+          graph, f'{self._DEFAULT_NAME}_update_state')
     # The functionality is not modified.
     self.assertEqual(3.0, updated_state['state'])
 
@@ -146,7 +146,7 @@ class TFStyleEncodeDecodeTest(tf.test.TestCase, parameterized.TestCase):
       self._assert_all_graph_nodes_in_name_scope(graph, name)
     else:
       self._assert_all_graph_nodes_in_name_scope(
-          graph, self._DEFAULT_NAME + '_get_params')
+          graph, f'{self._DEFAULT_NAME}_get_params')
     # The functionality is not modified.
     self.assertEqual(1.0, encode_params['param'])
     self.assertEqual(1.0, decode_params['param'])
@@ -168,7 +168,7 @@ class TFStyleEncodeDecodeTest(tf.test.TestCase, parameterized.TestCase):
       self._assert_all_graph_nodes_in_name_scope(graph, name)
     else:
       self._assert_all_graph_nodes_in_name_scope(
-          graph, self._DEFAULT_NAME + '_get_params')
+          graph, f'{self._DEFAULT_NAME}_get_params')
     # The functionality is not modified.
     self.assertEqual(6.0, encode_params['param'])
     self.assertEqual(6.0, decode_params['param'])
@@ -187,8 +187,8 @@ class TFStyleEncodeDecodeTest(tf.test.TestCase, parameterized.TestCase):
     if name is not None:
       self._assert_all_graph_nodes_in_name_scope(graph, name)
     else:
-      self._assert_all_graph_nodes_in_name_scope(
-          graph, self._DEFAULT_NAME + '_encode')
+      self._assert_all_graph_nodes_in_name_scope(graph,
+                                                 f'{self._DEFAULT_NAME}_encode')
     # The functionality (sum) is not modified.
     self.assertEqual(12.5, encoded_x)
 
@@ -224,8 +224,8 @@ class TFStyleEncodeDecodeTest(tf.test.TestCase, parameterized.TestCase):
     if name is not None:
       self._assert_all_graph_nodes_in_name_scope(graph, name)
     else:
-      self._assert_all_graph_nodes_in_name_scope(
-          graph, self._DEFAULT_NAME + '_decode')
+      self._assert_all_graph_nodes_in_name_scope(graph,
+                                                 f'{self._DEFAULT_NAME}_decode')
     # The functionality (sum + reshape) is not modified.
     self.assertAllEqual(np.array([2.0, 3.0, 4.0, 5.0]), decoded_x)
 

@@ -139,10 +139,7 @@ class PrunePreserveQuantizeRegistry():
     if cls._no_trainable_weights(layer):
       return True
 
-    if layer.__class__ in cls._LAYERS_CONFIG_MAP:
-      return True
-
-    return False
+    return layer.__class__ in cls._LAYERS_CONFIG_MAP
 
   @classmethod
   def _weight_names(cls, layer):
@@ -193,22 +190,20 @@ class PrunePreserveQuantizeRegistry():
     Returns:
       Returns quantize_config with addon sparsity preserve weight_quantizer.
     """
-    if self.supports(layer):
-      if (self._no_trainable_weights(layer) or
-          self._disable_prune_preserve(layer)):
-        return quantize_config
-      if (quantize_config.__class__.__name__
-          in self._LAYERS_CONFIG_MAP[layer.__class__].quantize_config_attrs):
-        quantize_config.weight_quantizer = self._config_quantizer_map[
-            quantize_config.__class__.__name__]
-      else:
-        raise ValueError('Configuration {} is not supported for Layer {}.'
-                         .format(str(quantize_config.__class__.__name__),
-                                 str(layer.__class__.__name__)))
-    else:
-      raise ValueError('Layer {} is not supported.'.format(
-          str(layer.__class__.__name__)))
+    if not self.supports(layer):
+      raise ValueError(f'Layer {str(layer.__class__.__name__)} is not supported.')
 
+    if (self._no_trainable_weights(layer) or
+        self._disable_prune_preserve(layer)):
+      return quantize_config
+    if (quantize_config.__class__.__name__
+          in self._LAYERS_CONFIG_MAP[layer.__class__].quantize_config_attrs):
+      quantize_config.weight_quantizer = self._config_quantizer_map[
+          quantize_config.__class__.__name__]
+    else:
+      raise ValueError(
+          f'Configuration {str(quantize_config.__class__.__name__)} is not supported for Layer {str(layer.__class__.__name__)}.'
+      )
     return quantize_config
 
 
@@ -227,10 +222,7 @@ class Default8bitPrunePreserveQuantizeRegistry(PrunePreserveQuantizeRegistry):
     quantize_config = (default_8bit_quantize_registry
                        .Default8BitQuantizeRegistry()
                        .get_quantize_config(layer))
-    prune_aware_quantize_config = self.apply_sparsity_preserve_quantize_config(
-        layer, quantize_config)
-
-    return prune_aware_quantize_config
+    return self.apply_sparsity_preserve_quantize_config(layer, quantize_config)
 
 
 class PrunePreserveDefaultWeightsQuantizer(quantizers.LastValueQuantizer):

@@ -365,9 +365,8 @@ class BaseEncodingStageTest(tf.test.TestCase, parameterized.TestCase):
 
     if is_adaptive_stage(stage):
       return _adaptive_one_to_many_encode_decode(state)
-    else:
-      assert state is None
-      return _non_adaptive_one_to_many_encode_decode()
+    assert state is None
+    return _non_adaptive_one_to_many_encode_decode()
 
   def run_many_to_one_encode_decode(self, stage, input_values, state=None):
     """Runs encoding and decoding in the many-to-one setting.
@@ -473,9 +472,8 @@ class BaseEncodingStageTest(tf.test.TestCase, parameterized.TestCase):
 
     if is_adaptive_stage(stage):
       return _adaptive_many_to_one_encode_decode(state)
-    else:
-      assert state is None
-      return _non_adaptive_many_to_one_encode_decode()
+    assert state is None
+    return _non_adaptive_many_to_one_encode_decode()
 
   def evaluate_tf_py_list(self, fetches, session=None):
     """Evaluates only provided `Tensor` objects and returns numpy values.
@@ -557,10 +555,7 @@ class BaseEncodingStageTest(tf.test.TestCase, parameterized.TestCase):
       `fetches` with any `Tensor` objects replaced by numpy values.
     """
     if any((tf.is_tensor(t) for t in tf.nest.flatten(fetches))):
-      if session:
-        fetches = session.run(fetches)
-      else:
-        fetches = self.evaluate(fetches)
+      fetches = session.run(fetches) if session else self.evaluate(fetches)
     return fetches
 
   def generic_asserts(self, test_data, stage):
@@ -664,10 +659,10 @@ class BaseEncodingStageTest(tf.test.TestCase, parameterized.TestCase):
 
     num_summands = len(server_test_data)
     expected_sum = np.sum([d.decoded_x for d in server_test_data], axis=0)
-    sum_encoded_x = {}
-    for k in server_test_data[0].encoded_x:
-      sum_encoded_x[k] = np.sum([d.encoded_x[k] for d in server_test_data],
-                                axis=0)
+    sum_encoded_x = {
+        k: np.sum([d.encoded_x[k] for d in server_test_data], axis=0)
+        for k in server_test_data[0].encoded_x
+    }
     with tf.Graph().as_default():
       with self.session() as sess:
         decode_sum_encoded_x = sess.run(
@@ -727,10 +722,8 @@ class PlusOneEncodingStage(encoding_stage.EncodingStageInterface):
              shape=None):
     """See base class."""
     del num_summands, shape  # Unused.
-    decoded_x = (
-        encoded_tensors[self.ENCODED_VALUES_KEY] -
-        decode_params[self.ADD_PARAM_KEY])
-    return decoded_x
+    return (encoded_tensors[self.ENCODED_VALUES_KEY] -
+            decode_params[self.ADD_PARAM_KEY])
 
 
 @encoding_stage.tf_style_encoding_stage
@@ -780,10 +773,8 @@ class TimesTwoEncodingStage(encoding_stage.EncodingStageInterface):
              shape=None):
     """See base class."""
     del num_summands, shape  # Unused.
-    decoded_x = (
-        encoded_tensors[self.ENCODED_VALUES_KEY] /
-        decode_params[self.FACTOR_PARAM_KEY])
-    return decoded_x
+    return (encoded_tensors[self.ENCODED_VALUES_KEY] /
+            decode_params[self.FACTOR_PARAM_KEY])
 
 
 @encoding_stage.tf_style_encoding_stage
@@ -844,10 +835,7 @@ class SimpleLinearEncodingStage(encoding_stage.EncodingStageInterface):
     """See base class."""
     del shape  # Unused.
     a, b = decode_params[self.A_PARAM_KEY], decode_params[self.B_PARAM_KEY]
-    if num_summands is not None:
-      shift = b * tf.cast(num_summands, b.dtype)
-    else:
-      shift = b
+    shift = b * tf.cast(num_summands, b.dtype) if num_summands is not None else b
     return (encoded_tensors[self.ENCODED_VALUES_KEY] - shift) / a
 
 

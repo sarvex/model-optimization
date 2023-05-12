@@ -128,9 +128,10 @@ class Encoder(object):
       `encode` method, with values replaced by their corresponding
       `StateAggregationMode` keys.
     """
-    children_aggregation_modes = {}
-    for key, encoder in six.iteritems(self.children):
-      children_aggregation_modes[key] = encoder.state_update_aggregation_modes
+    children_aggregation_modes = {
+        key: encoder.state_update_aggregation_modes
+        for key, encoder in six.iteritems(self.children)
+    }
     return {
         EncoderKeys.CHILDREN: children_aggregation_modes,
         EncoderKeys.TENSORS: self.stage.state_update_aggregation_modes
@@ -281,11 +282,11 @@ class Encoder(object):
     """Implementation for the `encode` method."""
     encoded_tensors = {}
     state_update_tensors = {}
-    input_shapes = {}
-    if self.stage.decode_needs_input_shape:
-      input_shapes[EncoderKeys.SHAPE] = py_utils.static_or_dynamic_shape(x)
-    else:
-      input_shapes[EncoderKeys.SHAPE] = None
+    input_shapes = {
+        EncoderKeys.SHAPE:
+        py_utils.static_or_dynamic_shape(x)
+        if self.stage.decode_needs_input_shape else None
+    }
     encoded_tensors, state_update_tensors[EncoderKeys.TENSORS] = (
         self.stage.encode(x, encode_params[EncoderKeys.PARAMS]))
     children_state_update_tensors = {}
@@ -542,9 +543,7 @@ class EncoderComposer(object):
     Returns:
       An `Encoder` composing the encoding stages.
     """
-    children = {}
-    for k, v in six.iteritems(self._children):
-      children[k] = v.make()
+    children = {k: v.make() for k, v in six.iteritems(self._children)}
     return Encoder(self._stage, children)
 
 

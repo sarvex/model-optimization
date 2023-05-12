@@ -63,7 +63,7 @@ def _check_block_size(flag_value):
     _parse_block_size_flag(flag_value)
     return True
   except:
-    raise flags.ValidationError('Invalid block size value "%s".' % flag_value)
+    raise flags.ValidationError(f'Invalid block size value "{flag_value}".')
 
 
 def convert_to_tflite(keras_model, output_path):

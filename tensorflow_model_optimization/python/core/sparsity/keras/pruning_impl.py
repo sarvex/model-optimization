@@ -127,9 +127,7 @@ class Pruning(object):
     """
     prepared_weights = pruning_utils.weights_rearrange(weights)
     mask = pruning_utils.generate_m_by_n_mask(prepared_weights, m_by_n)
-    new_mask = pruning_utils.m_by_n_sparsity_mask_prepare(mask, weights.shape)
-
-    return new_mask
+    return pruning_utils.m_by_n_sparsity_mask_prepare(mask, weights.shape)
 
   def _maybe_update_block_mask(self, weights):
     """Performs block-granular masking of the weights.
@@ -303,5 +301,5 @@ class Pruning(object):
       summary = tf.compat.v1.summary
     summary.scalar('sparsity', self._pruning_schedule(self._step_fn())[1])
     for _, mask, threshold in self._pruning_vars:
-      summary.scalar(mask.name + '/sparsity', 1.0 - tf.math.reduce_mean(mask))
-      summary.scalar(threshold.name + '/threshold', threshold)
+      summary.scalar(f'{mask.name}/sparsity', 1.0 - tf.math.reduce_mean(mask))
+      summary.scalar(f'{threshold.name}/threshold', threshold)

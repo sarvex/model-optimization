@@ -40,10 +40,7 @@ class NoOpActivation(object):
     return {}
 
   def __eq__(self, other):
-    if not other or not isinstance(other, NoOpActivation):
-      return False
-
-    return True
+    return bool(other and isinstance(other, NoOpActivation))
 
   def __ne__(self, other):
     """Ensure this works on Python2."""

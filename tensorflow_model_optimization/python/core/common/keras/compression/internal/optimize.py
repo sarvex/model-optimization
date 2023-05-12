@@ -30,9 +30,8 @@ import tensorflow as tf
 # for `tf.while`.
 def _prevent_constant_folding(tensor, dummy_inputs):
   tensor = tf.identity(tensor)
-  outputs = tf.cond(
+  return tf.cond(
       tf.reduce_sum(dummy_inputs) > 0, lambda: tensor, lambda: tensor)
-  return outputs
 
 
 class _TrainingWrapper(tf.keras.layers.Wrapper):
@@ -50,10 +49,11 @@ class _TrainingWrapper(tf.keras.layers.Wrapper):
 
   # TODO(tfmot): We don't make tensor to map dict due to tensor is unhashable.
   def _get_name_by_tensor(self, tensor):
-    for name, dummy_tensor in self.dummy_name_to_tensor.items():
-      if tensor is dummy_tensor:
-        return name
-    return None
+    return next(
+        (name for name, dummy_tensor in self.dummy_name_to_tensor.items()
+         if tensor is dummy_tensor),
+        None,
+    )
 
   def _skip_compressible_weights(self, *args, **kwargs):
     # Match for compressible weights based on `name` parameter.
@@ -226,12 +226,10 @@ class _InferenceWrapper(tf.keras.layers.Wrapper):
 
   def call(self, inputs, training=None):
     for attr_name in self.training_tensors:
-      # TODO(tfmot): understand how read_value() is converted to
-      # inference in TensorFlow Lite.
-      compressed_weight_tensors = []
-      for v in self.compressed_weights[attr_name]:
-        compressed_weight_tensors.append(
-            _prevent_constant_folding(v.read_value(), inputs))
+      compressed_weight_tensors = [
+          _prevent_constant_folding(v.read_value(), inputs)
+          for v in self.compressed_weights[attr_name]
+      ]
       weight_tensor = self.algorithm.decompress_weights(
           *compressed_weight_tensors)
       setattr(self.layer, attr_name, weight_tensor)
@@ -241,10 +239,7 @@ class _InferenceWrapper(tf.keras.layers.Wrapper):
 
 
 def _find(value, items):
-  for item in items:
-    if value is item:
-      return True
-  return False
+  return any(value is item for item in items)
 
 
 def _map_to_training_weights(
@@ -271,22 +266,14 @@ def _map_to_training_weights(
   # TODO(tfmot): see if Keras can introduce changes to simplify this.
   original_weights = []
   training_weights = []
-  if isinstance(layer, tf.keras.layers.Conv2D) or \
-     isinstance(layer, tf.keras.layers.Dense):
+  if isinstance(layer, (tf.keras.layers.Conv2D, tf.keras.layers.Dense)):
     for weight in layer.weights:
       if _find(weight, compressible_weights):
         algorithm.weight_reprs = []
         algorithm.init_training_weights(weight)
-        for weight_repr in algorithm.weight_reprs:
-          # Assumes initializer is tf.keras.initializers.Constant.
-          # TODO(tfmot): add check for this assumption.
-          # TODO(tfmot): the documentation for
-          # tf.keras.initializers.Constant(value)
-          # suggests that the `value` cannot be any arbitrary shape and
-          # only a single scalar value. It works in this implementation
-          # to make `value` any tensor - check this.
-          training_weights.append(weight_repr.kwargs['initializer'](
-              shape=None, dtype=weight_repr.kwargs['dtype']))
+        training_weights.extend(weight_repr.kwargs['initializer'](
+            shape=None, dtype=weight_repr.kwargs['dtype'])
+                                for weight_repr in algorithm.weight_reprs)
       else:
         original_weights.append(weight)
 
@@ -324,8 +311,7 @@ def _map_to_inference_weights(training_weights, algorithm, training_tensors):
     if weight in training_tensors:
       compressed = algorithm.compress_training_weights(
           *training_tensors[weight])
-      for c in compressed:
-        compressed_weights.append(c.numpy())
+      compressed_weights.extend(c.numpy() for c in compressed)
       layer_weights_i += len(training_tensors[weight])
     else:
       compressed_weights.append(training_weights[layer_weights_i])
@@ -424,12 +410,10 @@ def create_layer_for_inference(layer: _TrainingWrapper, algorithm):
   nested_layer = layer.layer
   input_shape = layer.input_shape
 
-  # Construct map from attribute (e.g. 'kernel') to tensor versions of
-  # variables used during training.
-  compressible_training_tensors = {}
-  for attr, weights in layer.training_weights.items():
-    compressible_training_tensors[attr] = [w.read_value() for w in weights]
-
+  compressible_training_tensors = {
+      attr: [w.read_value() for w in weights]
+      for attr, weights in layer.training_weights.items()
+  }
   # Process nested layer.
   #
   # TODO(tfmot): same TODOs as in _create_layer_for_training.

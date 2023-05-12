@@ -235,8 +235,7 @@ def _cluster_weights(to_cluster, number_of_clusters, cluster_centroids_init,
       return layer
     if isinstance(layer, InputLayer):
       return layer.__class__.from_config(layer.get_config())
-    if isinstance(layer, tf.keras.layers.RNN) or isinstance(
-        layer, tf.keras.layers.Bidirectional):
+    if isinstance(layer, (tf.keras.layers.RNN, tf.keras.layers.Bidirectional)):
       return cluster_wrapper.ClusterWeightsRNN(
           layer,
           number_of_clusters,

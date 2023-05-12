@@ -174,7 +174,7 @@ class QuantizeWrapperTest(tf.test.TestCase, parameterized.TestCase):
         'QuantizeAwareActivation': QuantizeAwareActivation,
         'QuantizeWrapper': QuantizeWrapper
     }
-    custom_objects.update(default_8bit_quantize_registry._types_dict())
+    custom_objects |= default_8bit_quantize_registry._types_dict()
 
     serialized_wrapper = serialize_layer(wrapper)
     with custom_object_scope(custom_objects):

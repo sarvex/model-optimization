@@ -398,9 +398,7 @@ class PruneTest(test.TestCase, parameterized.TestCase):
     same_architecture_model.load_weights(tf_weights)
 
   def testPruneScope_NotNeededForTF2SavedModel(self):
-    # TODO(b/185726968): replace with shared v1 test_util.
-    is_v1_apis = hasattr(tf, 'assign')
-    if is_v1_apis:
+    if is_v1_apis := hasattr(tf, 'assign'):
       return
 
     model = keras_test_utils.build_simple_dense_model()

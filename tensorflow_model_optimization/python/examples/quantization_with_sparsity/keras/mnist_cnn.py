@@ -66,12 +66,12 @@ def compile_and_fit(model,
       'loss': 'sparse_categorical_crossentropy',
       'metrics': ['accuracy'],
   }
-  compile_args.update(compile_kwargs)
+  compile_args |= compile_kwargs
   model.compile(**compile_args)
 
   # train the model.
   fit_args = {'epochs': 4, 'validation_split': 0.1}
-  fit_args.update(fit_kwargs)
+  fit_args |= fit_kwargs
   model.fit(image_train, label_train, **fit_args)
 
 
@@ -81,9 +81,13 @@ def evaluate_and_show_sparsity(model, image_test, label_test):
   print('Test accuracy:', score[1])
 
   for layer in model.layers:
-    if isinstance(layer,
-                  prune.pruning_wrapper.PruneLowMagnitude) or isinstance(
-                      layer, quantize.quantize_wrapper.QuantizeWrapper):
+    if isinstance(
+        layer,
+        (
+            prune.pruning_wrapper.PruneLowMagnitude,
+            quantize.quantize_wrapper.QuantizeWrapper,
+        ),
+    ):
       for weights in layer.trainable_weights:
         np_weights = tf.keras.backend.get_value(weights)
         sparsity = 1.0 - np.count_nonzero(np_weights) / float(np_weights.size)

@@ -144,12 +144,9 @@ class PruneRegistry(object):
       return True
 
     if layer.__class__ in cls._RNN_LAYERS:
-      for cell in cls._get_rnn_cells(layer):
-        if cell.__class__ not in cls._RNN_CELLS_WEIGHTS_MAP \
-            and not isinstance(cell, prunable_layer.PrunableLayer):
-          return False
-      return True
-
+      return not any(cell.__class__ not in cls._RNN_CELLS_WEIGHTS_MAP
+                     and not isinstance(cell, prunable_layer.PrunableLayer)
+                     for cell in cls._get_rnn_cells(layer))
     return False
 
   @classmethod
@@ -180,7 +177,7 @@ class PruneRegistry(object):
     """
 
     if not cls.supports(layer):
-      raise ValueError('Layer ' + str(layer.__class__) + ' is not supported.')
+      raise ValueError(f'Layer {str(layer.__class__)} is not supported.')
 
     def get_prunable_weights():
       return [getattr(layer, weight) for weight in cls._weight_names(layer)]
